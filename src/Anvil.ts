@@ -39,6 +39,32 @@ export class Anvil {
     return this.buffer.height;
   }
 
+  /**
+   * Load existing image data into the anvil
+   * @param imageData Existing pixel buffer to copy from
+   */
+  loadImageData(imageData: Uint8ClampedArray): void {
+    const expectedLength = this.buffer.width * this.buffer.height * 4;
+    if (imageData.length !== expectedLength) {
+      throw new Error(`Image data length ${imageData.length} does not match expected ${expectedLength}`);
+    }
+
+    // Copy data to internal buffer
+    this.buffer.data.set(imageData);
+
+    // Reset all tracking states
+    this.diffs.clear();
+    this.tilesController.setAllDirty();
+  }
+
+  /**
+   * Get the current buffer data
+   * @returns Copy of the current pixel buffer
+   */
+  getImageData(): Uint8ClampedArray {
+    return new Uint8ClampedArray(this.buffer.data);
+  }
+
   getTileSize(): number {
     return this.tileSize;
   }
