@@ -1,0 +1,33 @@
+import type { TileIndex } from './types.js';
+
+// Patch structure for undo/redo operations
+export interface Patch {
+  // Whole buffer replacement (for large changes like canvas resize)
+  whole?: {
+    before: Uint8ClampedArray;
+    after: Uint8ClampedArray;
+  };
+
+  // Tile-level uniform fills
+  tiles?: Array<{
+    tile: TileIndex;
+    before?: number; // packed RGBA32, undefined = was non-uniform
+    after: number; // packed RGBA32
+  }>;
+
+  // Pixel-level changes within tiles
+  pixels?: Array<{
+    tile: TileIndex;
+    idx: Uint16Array; // tile-local indices (0..tileSize²-1)
+    before: Uint32Array; // packed RGBA32
+    after: Uint32Array; // packed RGBA32
+  }>;
+}
+
+// Metadata for patch application
+export interface PatchMetadata {
+  layerId?: string;
+  tool?: string;
+  timestamp?: number;
+  pixelCount?: number;
+}

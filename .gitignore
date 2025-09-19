@@ -1,0 +1,50 @@
+dist
+.wrangler
+.output
+.vercel
+.netlify
+.vinxi
+.vite-inspect
+app.config.timestamp_*.js
+
+# Environment
+.env
+.env*.local
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+
+# Temp
+gitignore
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# repomix
+repomix-output.txt
+repomix-output.xml
+
+*.heapprofile
+
+*.sledge
+node_modules
+
+*.lnk
+.github/instructions
+.repomix
+# .vscode
+
+target
+
+post_build.bat
+
+.cargo
+.tauri
