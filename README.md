@@ -231,6 +231,15 @@ globalAnvil.getDirtyTiles(); // { layer1-uuid: [{ x: 0, y: 1 }], layer2-uuid: [{
 
 4. Support WebGL Backend
 
+```ts
+// register canvas for global anvil
+const canvasRef = document.getElementById("my-canvas") as HTMLCanvasElement;
+globalAnvil.useWebGLBackend(canvasRef);
+
+// render only dirty tiles of first layer
+globalAnvil.reRenderWebGL({ onlyDirtyTiles: true, layers: [firstAnvil] });
+```
+
 ## Deferred / Not Planned (for now)
 
 | Item                          | Reason                              |
@@ -251,12 +260,3 @@ globalAnvil.getDirtyTiles(); // { layer1-uuid: [{ x: 0, y: 1 }], layer2-uuid: [{
 
 ---
 Feedback welcome. Keep API surface minimal until real migration pressure appears.
-
-```ts
-// register canvas for global anvil
-const canvasRef = document.getElementById("my-canvas") as HTMLCanvasElement;
-globalAnvil.useWebGLBackend(canvasRef);
-
-// render only dirty tiles of first layer
-globalAnvil.reRenderWebGL({ onlyDirtyTiles: true, layers: [firstAnvil] });
-```

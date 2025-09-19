@@ -1,10 +1,10 @@
 // Public API exports for @sledge/anvil
 export type { Patch, PatchMetadata } from './src/patch.js';
-export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types.js';
+export type { LayerPatch, Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types.js';
 
 // Core classes
+export { Anvil } from './src/Anvil.js';
 export { PixelBuffer } from './src/buffer/PixelBuffer.js';
-export { Anvil } from './src/LayerEngine.js';
 
 // Utility functions
 export { linearToTileIndex, packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from './src/types.js';
