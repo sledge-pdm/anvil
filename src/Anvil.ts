@@ -60,19 +60,53 @@ export class Anvil {
     this.buffer.set(x, y, color);
     this.tilesController.markDirtyByPixel(x, y);
     this.diffsController.addPixel(x, y, oldColor, color);
+
+    // Check if the tile might have become uniform after this change
+    const tileIndex = this.tiles.pixelToTileIndex(x, y);
+    this.checkTileUniformity(tileIndex);
   }
 
-  // Fill operations
+  private checkTileUniformity(tileIndex: { row: number; col: number }): void {
+    // Use the tile controller's detectTileUniformity method
+    this.tilesController.detectTileUniformity(tileIndex);
+  } // Fill operations
   fillRect(x: number, y: number, width: number, height: number, color: RGBA): void {
     if (width <= 0 || height <= 0) return;
 
-    for (let dy = 0; dy < height; dy++) {
-      for (let dx = 0; dx < width; dx++) {
-        const px = x + dx;
-        const py = y + dy;
+    // Check if this fill operation covers entire tiles
+    const startTileX = Math.floor(x / this.tileSize);
+    const startTileY = Math.floor(y / this.tileSize);
+    const endTileX = Math.floor((x + width - 1) / this.tileSize);
+    const endTileY = Math.floor((y + height - 1) / this.tileSize);
 
-        if (px >= 0 && px < this.getWidth() && py >= 0 && py < this.getHeight()) {
-          this.setPixel(px, py, color);
+    // Optimize: if fill covers entire tiles exactly
+    const tilesWide = Math.ceil(this.getWidth() / this.tileSize);
+    const tilesHigh = Math.ceil(this.getHeight() / this.tileSize);
+
+    for (let tileY = startTileY; tileY <= endTileY; tileY++) {
+      for (let tileX = startTileX; tileX <= endTileX; tileX++) {
+        if (tileX >= tilesWide || tileY >= tilesHigh) continue;
+
+        const tileStartX = tileX * this.tileSize;
+        const tileStartY = tileY * this.tileSize;
+        const tileEndX = Math.min(tileStartX + this.tileSize, this.getWidth());
+        const tileEndY = Math.min(tileStartY + this.tileSize, this.getHeight());
+
+        // Check if this fill completely covers this tile
+        if (x <= tileStartX && y <= tileStartY && x + width >= tileEndX && y + height >= tileEndY) {
+          // Tile is completely covered - use tile fill optimization
+          const tileIndex = { row: tileY, col: tileX };
+          const oldColor = this.tilesController.getTileInfo(tileIndex).uniformColor || ([0, 0, 0, 0] as RGBA);
+
+          this.tilesController.fillTile(tileIndex, color);
+          this.diffsController.addTileFill(tileIndex, oldColor, color);
+        } else {
+          // Tile is partially covered - fill individual pixels
+          for (let py = Math.max(y, tileStartY); py < Math.min(y + height, tileEndY); py++) {
+            for (let px = Math.max(x, tileStartX); px < Math.min(x + width, tileEndX); px++) {
+              this.setPixel(px, py, color);
+            }
+          }
         }
       }
     }

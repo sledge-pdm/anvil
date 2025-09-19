@@ -297,12 +297,16 @@ describe('Anvil Facade Integration', () => {
 
     it('should handle large batch operations efficiently', () => {
       const startTime = performance.now();
+      const uniquePositions = new Set<string>();
 
       // Perform many pixel operations
       for (let i = 0; i < 1000; i++) {
         const x = Math.floor(Math.random() * width);
         const y = Math.floor(Math.random() * height);
         const color: RGBA = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), 255];
+
+        // Track unique positions
+        uniquePositions.add(`${x},${y}`);
         anvil.setPixel(x, y, color);
       }
 
@@ -311,7 +315,8 @@ describe('Anvil Facade Integration', () => {
       // Should complete within reasonable time (adjust threshold as needed)
       expect(elapsed).toBeLessThan(100); // 100ms for 1000 operations
       expect(anvil.hasPendingChanges()).toBe(true);
-      expect(anvil.getPendingPixelCount()).toBe(1000);
+      // Should count unique pixels, not total operations (due to potential coordinate duplicates)
+      expect(anvil.getPendingPixelCount()).toBe(uniquePositions.size);
     });
 
     it('should optimize repeated operations on same pixel', () => {
