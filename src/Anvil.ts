@@ -147,6 +147,16 @@ export class Anvil {
     return this.buffer.data;
   }
 
+  /**
+   * Register a whole-buffer change (before/after) into diff tracking.
+   * Marks all tiles dirty so renderer can refresh.
+   */
+  addWholeBufferChange(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
+    if (before.length !== after.length) throw new Error('addWholeBufferChange: length mismatch');
+    this.diffsController.addWholeBufferChange(before, after);
+    this.tilesController.setAllDirty();
+  }
+
   // Resize operations
   resize(newWidth: number, newHeight: number): void {
     const newSize: Size = { width: newWidth, height: newHeight };
