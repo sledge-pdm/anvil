@@ -1,0 +1,16 @@
+[package]
+name = "anvil-ops-wasm"
+version = "0.1.0"
+authors = ["innsbluck <innsbluck@gmail.com>"]
+description = "wasm module for anvil"
+license = "MIT/Apache-2.0"
+edition = "2021"
+
+[package.metadata.wasm-pack.output]
+name = "@anvil/wasm"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.100"

@@ -1,6 +1,6 @@
-import type { Patch } from '../patch.js';
+import type { Patch } from '../../patch.js';
+import type { RGBA, TileIndex } from '../../types.js';
 import { LayerTilesController } from '../tile/LayerTilesController.js';
-import type { RGBA, TileIndex } from '../types.js';
 import { LayerDiffs } from './LayerDiffs.js';
 
 /**

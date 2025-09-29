@@ -1,8 +1,8 @@
 import { PixelBuffer } from './buffer/PixelBuffer';
-import { LayerDiffs } from './diff/LayerDiffs';
-import { LayerDiffsController } from './diff/LayerDiffsController';
-import { LayerTiles } from './tile/LayerTiles';
-import { LayerTilesController } from './tile/LayerTilesController';
+import { LayerDiffs } from './buffer/diff/LayerDiffs';
+import { LayerDiffsController } from './buffer/diff/LayerDiffsController';
+import { LayerTiles } from './buffer/tile/LayerTiles';
+import { LayerTilesController } from './buffer/tile/LayerTilesController';
 import type { LayerPatch, Point, RGBA, Size, TileIndex } from './types';
 
 /**

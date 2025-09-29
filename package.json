@@ -18,6 +18,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "wasm:build": "wasm-pack build ./src/ops_wasm --target bundler"
   }
 }

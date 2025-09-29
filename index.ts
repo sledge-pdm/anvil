@@ -10,7 +10,12 @@ export { PixelBuffer } from './src/buffer/PixelBuffer.js';
 export { linearToTileIndex, packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from './src/types.js';
 
 // For advanced usage - direct access to components
-export { LayerDiffs } from './src/diff/LayerDiffs.js';
-export { LayerDiffsController } from './src/diff/LayerDiffsController.js';
-export { LayerTiles } from './src/tile/LayerTiles.js';
-export { LayerTilesController } from './src/tile/LayerTilesController.js';
+export { LayerDiffs } from './src/buffer/diff/LayerDiffs.js';
+export { LayerDiffsController } from './src/buffer/diff/LayerDiffsController.js';
+export { LayerTiles } from './src/buffer/tile/LayerTiles.js';
+export { LayerTilesController } from './src/buffer/tile/LayerTilesController.js';
+
+// Ops
+export { floodFill } from './src/ops/fill/FloodFill.js';
+export { patternStamp } from './src/ops/pattern/Pattern.js';
+export { transferBuffer } from './src/ops/transfer/Transfer.js';

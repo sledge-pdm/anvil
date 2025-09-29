@@ -1,5 +1,5 @@
-import type { RGBA, TileIndex } from '../types.js';
-import { rgbaToPackedU32 } from '../types.js';
+import type { RGBA, TileIndex } from '../../types.js';
+import { rgbaToPackedU32 } from '../../types.js';
 
 /**
  * Model: Accumulates pending diffs before flush into Patch
