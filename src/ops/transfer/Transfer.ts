@@ -12,8 +12,6 @@ interface TransferOptions {
   scaleX?: number;
   scaleY?: number;
   rotate?: number;
-  flipX?: boolean;
-  flipY?: boolean;
   offsetX?: number;
   offsetY?: number;
 }
@@ -32,7 +30,7 @@ export function transferBuffer(
   targetHeight: number,
   options?: TransferOptions
 ): Uint8ClampedArray {
-  const { scaleX = 1.0, scaleY = 1.0, rotate = 0, flipX = false, flipY = false, offsetX = 0, offsetY = 0 } = options || {};
+  const { scaleX = 1.0, scaleY = 1.0, rotate = 0, offsetX = 0, offsetY = 0 } = options || {};
 
   try {
     const res = patch_buffer_rgba(

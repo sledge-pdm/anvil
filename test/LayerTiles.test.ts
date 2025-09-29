@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PixelBuffer } from '../src/buffer/PixelBuffer';
-import { LayerTiles } from '../src/tile/LayerTiles';
-import { LayerTilesController } from '../src/tile/LayerTilesController';
+import { LayerTiles } from '../src/buffer/tile/LayerTiles';
+import { LayerTilesController } from '../src/buffer/tile/LayerTilesController';
 import type { RGBA, TileIndex } from '../src/types';
 
 describe('LayerTiles and LayerTilesController', () => {

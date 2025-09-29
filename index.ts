@@ -17,5 +17,5 @@ export { LayerTilesController } from './src/buffer/tile/LayerTilesController.js'
 
 // Ops
 export { floodFill } from './src/ops/fill/FloodFill.js';
-export { patternStamp } from './src/ops/pattern/Pattern.js';
+export { createSolidPattern, patternStamp } from './src/ops/pattern/Pattern.js';
 export { transferBuffer } from './src/ops/transfer/Transfer.js';
