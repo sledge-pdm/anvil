@@ -1,6 +1,12 @@
 {
-  "extends": "../../configs/ts/tsconfig.base.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "strict": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
     "outDir": "./dist",
     "rootDir": "./",
     "declaration": true,
