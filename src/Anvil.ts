@@ -95,7 +95,9 @@ export class Anvil {
   private checkTileUniformity(tileIndex: { row: number; col: number }): void {
     // Use the tile controller's detectTileUniformity method
     this.tilesController.detectTileUniformity(tileIndex);
-  } // Fill operations
+  }
+
+  // Fill operations
   fillRect(x: number, y: number, width: number, height: number, color: RGBA): void {
     if (width <= 0 || height <= 0) return;
 
@@ -147,11 +149,19 @@ export class Anvil {
     return this.buffer.data;
   }
 
+  addPixelDiff(x: number, y: number, before: RGBA, after: RGBA): void {
+    this.diffsController.addPixel(x, y, before, after);
+  }
+
+  addTileFillDiff(tile: TileIndex, before: RGBA | undefined, after: RGBA): void {
+    this.diffsController.addTileFill(tile, before, after);
+  }
+
   /**
    * Register a whole-buffer change (before/after) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
    */
-  addWholeBufferChange(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
+  addWholeDiff(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
     if (before.length !== after.length) throw new Error('addWholeBufferChange: length mismatch');
     this.diffsController.addWholeBufferChange(before, after);
     this.tilesController.setAllDirty();
