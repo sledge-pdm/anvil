@@ -16,6 +16,10 @@ export class Anvil {
   private tilesController: LayerTilesController;
   private diffsController: LayerDiffsController;
   private readonly tileSize: number;
+  // Batch mode flags/state
+  private _batchDepth = 0; // ネスト対応（念のため）
+  private _batchDirtyTiles: Set<string> | null = null;
+  private _batchUniformCheckTiles: Set<string> | null = null;
 
   constructor(width: number, height: number, tileSize = 32) {
     this.tileSize = tileSize;
@@ -80,12 +84,20 @@ export class Anvil {
 
     const oldColor = this.buffer.get(x, y);
     this.buffer.set(x, y, color);
-    this.tilesController.markDirtyByPixel(x, y);
-    this.diffsController.addPixel(x, y, oldColor, color);
-
-    // Check if the tile might have become uniform after this change
-    const tileIndex = this.tilesController.pixelToTileIndex(x, y);
-    this.checkTileUniformity(tileIndex);
+    if (this._batchDepth > 0) {
+      // defer tile + uniform detection
+      const tileIndex = this.tilesController.pixelToTileIndex(x, y);
+      const key = tileIndex.row + ',' + tileIndex.col;
+      this._batchDirtyTiles?.add(key);
+      // uniform チェックはバッチ終端でまとめて再判定するので候補として保持
+      this._batchUniformCheckTiles?.add(key);
+      this.diffsController.addPixel(x, y, oldColor, color);
+    } else {
+      this.tilesController.markDirtyByPixel(x, y);
+      this.diffsController.addPixel(x, y, oldColor, color);
+      const tileIndex = this.tilesController.pixelToTileIndex(x, y);
+      this.checkTileUniformity(tileIndex);
+    }
   }
 
   private checkTileUniformity(tileIndex: { row: number; col: number }): void {
@@ -149,6 +161,27 @@ export class Anvil {
     this.diffsController.addPixel(x, y, before, after);
   }
 
+  /**
+   * Bulk pixel diffs 登録用補助。Anvil 外で manualDiff で直接 buffer を書いた後、before/after をまとめて登録。
+   * batch 中でも利用可能。
+   */
+  addPixelDiffs(diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }>): void {
+    for (const d of diffs) {
+      // diff 登録
+      this.diffsController.addPixel(d.x, d.y, d.before, d.after);
+      if (this._batchDepth > 0) {
+        const tileIndex = this.tilesController.pixelToTileIndex(d.x, d.y);
+        const key = tileIndex.row + ',' + tileIndex.col;
+        this._batchDirtyTiles?.add(key);
+        this._batchUniformCheckTiles?.add(key);
+      } else {
+        this.tilesController.markDirtyByPixel(d.x, d.y);
+        const tileIndex = this.tilesController.pixelToTileIndex(d.x, d.y);
+        this.checkTileUniformity(tileIndex);
+      }
+    }
+  }
+
   addTileFillDiff(tile: TileIndex, before: RGBA | undefined, after: RGBA): void {
     this.diffsController.addTileFill(tile, before, after);
   }
@@ -198,6 +231,43 @@ export class Anvil {
 
   discardPendingChanges(): void {
     this.diffsController.discardPendingChanges();
+  }
+
+  /**
+   * Start batch mode: tile dirty/uniform 判定を遅延させる。
+   * ネスト可能。既にバッチ中ならカウンタのみ増やす。
+   */
+  beginBatch(): void {
+    if (this._batchDepth === 0) {
+      this._batchDirtyTiles = new Set();
+      this._batchUniformCheckTiles = new Set();
+    }
+    this._batchDepth++;
+  }
+
+  /**
+   * End batch: 0 に戻ったタイミングでまとめて tile dirty と uniformity 再判定。
+   */
+  endBatch(): void {
+    if (this._batchDepth === 0) return;
+    this._batchDepth--;
+    if (this._batchDepth > 0) return; // まだネスト内
+
+    const dirty = this._batchDirtyTiles!;
+    const uni = this._batchUniformCheckTiles!;
+    this._batchDirtyTiles = null;
+    this._batchUniformCheckTiles = null;
+
+    // Dirty 適用 (uniformity は後でまとめて判定)
+    for (const key of dirty) {
+      const [row, col] = key.split(',').map((v) => parseInt(v, 10));
+      this.tilesController.markDirtyByPixel(row * this.tileSize, col * this.tileSize); // 任意のピクセルで dirty 化
+    }
+    // uniformity 再チェック
+    for (const key of uni) {
+      const [row, col] = key.split(',').map((v) => parseInt(v, 10));
+      this.checkTileUniformity({ row, col });
+    }
   }
 
   // Tile management
