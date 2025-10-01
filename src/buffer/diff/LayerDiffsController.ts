@@ -71,6 +71,10 @@ export class LayerDiffsController {
     return this.diffs.hasPixelChange(tile, tileLocalIndex);
   }
 
+  clearDiffs() {
+    this.diffs.clear();
+  }
+
   /**
    * Flush accumulated changes into a Patch and clear internal state
    */

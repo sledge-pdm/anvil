@@ -13,9 +13,7 @@ import type { LayerPatch, Point, RGBA, Size, TileIndex } from './types';
  */
 export class Anvil {
   private buffer: PixelBuffer;
-  private tiles: LayerTiles;
   private tilesController: LayerTilesController;
-  private diffs: LayerDiffs;
   private diffsController: LayerDiffsController;
   private readonly tileSize: number;
 
@@ -24,10 +22,8 @@ export class Anvil {
 
     // Initialize core components
     this.buffer = new PixelBuffer(width, height);
-    this.tiles = new LayerTiles(width, height, tileSize);
-    this.tilesController = new LayerTilesController(this.tiles, this.buffer);
-    this.diffs = new LayerDiffs();
-    this.diffsController = new LayerDiffsController(this.diffs, this.tilesController, tileSize);
+    this.tilesController = new LayerTilesController(new LayerTiles(width, height, tileSize), this.buffer);
+    this.diffsController = new LayerDiffsController(new LayerDiffs(), this.tilesController, tileSize);
   }
 
   // Basic properties
@@ -53,7 +49,7 @@ export class Anvil {
     this.buffer.data.set(imageData);
 
     // Reset all tracking states
-    this.diffs.clear();
+    this.diffsController.clearDiffs();
     this.tilesController.setAllDirty();
   }
 
@@ -88,7 +84,7 @@ export class Anvil {
     this.diffsController.addPixel(x, y, oldColor, color);
 
     // Check if the tile might have become uniform after this change
-    const tileIndex = this.tiles.pixelToTileIndex(x, y);
+    const tileIndex = this.tilesController.pixelToTileIndex(x, y);
     this.checkTileUniformity(tileIndex);
   }
 
@@ -173,7 +169,7 @@ export class Anvil {
     this.buffer.resize(newSize);
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffs.clear();
+    this.diffsController.clearDiffs();
   }
 
   resizeWithOffset(newWidth: number, newHeight: number, offsetX: number, offsetY: number): void {
@@ -182,12 +178,7 @@ export class Anvil {
     this.buffer.resize(newSize, { destOrigin });
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffs.clear();
-  }
-
-  // Change tracking
-  hasPendingChanges(): boolean {
-    return this.diffs.hasPendingChanges();
+    this.diffsController.clearDiffs();
   }
 
   getPendingPixelCount(): number {

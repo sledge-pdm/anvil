@@ -12,6 +12,10 @@ export class LayerTilesController {
     private buffer: PixelBuffer
   ) {}
 
+  pixelToTileIndex(x: number, y: number): TileIndex {
+    return this.tiles.pixelToTileIndex(x, y);
+  }
+
   /**
    * Mark tile dirty by pixel coordinates
    */

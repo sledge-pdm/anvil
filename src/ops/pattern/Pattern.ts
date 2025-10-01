@@ -16,11 +16,11 @@ interface PutShapeOptions {
   posY: number; // centerY
   color: RGBA;
   filter?: (x: number, y: number) => boolean; // true の時描画許可
-  collectDiff?: boolean; // true なら変更前後を返却
+  manualDiff?: boolean; // true なら変更前後を返却
 }
 
 export function putShape(opts: PutShapeOptions) {
-  const { shape, anvil, posX, posY, color, filter, collectDiff } = opts;
+  const { shape, anvil, posX, posY, color, filter, manualDiff } = opts;
   if (!shape || shape.width <= 0 || shape.height <= 0) return undefined;
 
   const { mask, width: mW, height: mH, offsetX, offsetY } = shape;
@@ -28,24 +28,10 @@ export function putShape(opts: PutShapeOptions) {
   const targetHeight = anvil.getHeight();
   const tlX = posX + offsetX;
   const tlY = posY + offsetY;
+  const target = anvil.getBufferData();
 
-  // 高速パス: フィルタも diff 収集も不要
-  if (!filter && !collectDiff) {
-    for (let iy = 0; iy < mH; iy++) {
-      const ty = tlY + iy;
-      if (ty < 0 || ty >= targetHeight) continue;
-      const rowOff = iy * mW;
-      for (let ix = 0; ix < mW; ix++) {
-        if (mask[rowOff + ix] !== 1) continue;
-        const tx = tlX + ix;
-        if (tx < 0 || tx >= targetWidth) continue;
-        anvil.setPixel(tx, ty, color);
-      }
-    }
-    return undefined;
-  }
-
-  const diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }> = collectDiff ? [] : (undefined as any);
+  const diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }> = manualDiff ? [] : (undefined as any);
+  
   for (let iy = 0; iy < mH; iy++) {
     const ty = tlY + iy;
     if (ty < 0 || ty >= targetHeight) continue;
@@ -55,21 +41,22 @@ export function putShape(opts: PutShapeOptions) {
       const tx = tlX + ix;
       if (tx < 0 || tx >= targetWidth) continue;
       if (filter && !filter(tx, ty)) continue;
-      if (collectDiff) {
-        // 変更前を取得 (失敗時は透明扱い)
-        let before: RGBA;
-        try {
-          before = anvil.getPixel(tx, ty) as RGBA;
-        } catch {
-          before = [0, 0, 0, 0];
-        }
-        anvil.setPixel(tx, ty, color);
+
+      if (manualDiff) {
+        const before = anvil.getPixel(tx, ty) as RGBA;
+        // anvil.setPixel(tx, ty, color); DON'T DO THIS BECAUSE IT ADDS DIFF AUTOMATICALLY
+        const ti = (tx + ty * targetWidth) * 4;
+        target[ti] = color[0];
+        target[ti + 1] = color[1];
+        target[ti + 2] = color[2];
+        target[ti + 3] = color[3];
         diffs!.push({ x: tx, y: ty, before, after: color });
       } else {
         anvil.setPixel(tx, ty, color);
       }
     }
   }
+
   return diffs;
 }
 
@@ -79,7 +66,7 @@ interface PutShapeLineOptions extends PutShapeOptions {
 }
 
 export function putShapeLine(opts: PutShapeLineOptions) {
-  const { fromPosX, fromPosY, posX, posY, collectDiff } = opts;
+  const { fromPosX, fromPosY, posX, posY, manualDiff } = opts;
 
   // 単一点なら putShape で終わり
   if (fromPosX === posX && fromPosY === posY) {
@@ -99,12 +86,12 @@ export function putShapeLine(opts: PutShapeLineOptions) {
 
   // diff 収集 (重複座標の before は最初のものを保持)
   let aggregated: Array<{ x: number; y: number; before: RGBA; after: RGBA }> | undefined;
-  const diffMap: Map<string, { x: number; y: number; before: RGBA; after: RGBA }> = collectDiff ? new Map() : new Map();
+  const diffMap: Map<string, { x: number; y: number; before: RGBA; after: RGBA }> = manualDiff ? new Map() : new Map();
 
   while (true) {
     // 1 スタンプ (中心を現在点に)
-    if (collectDiff) {
-      const diffs = putShape({ ...opts, posX: x0, posY: y0 }) as
+    if (manualDiff) {
+      const diffs = putShape({ ...opts, posX: x0, posY: y0, manualDiff: true }) as
         | Array<{
             x: number;
             y: number;
@@ -116,13 +103,10 @@ export function putShapeLine(opts: PutShapeLineOptions) {
         for (const d of diffs) {
           const key = d.x + ',' + d.y;
           if (!diffMap.has(key)) diffMap.set(key, d);
-          else {
-            // 既に塗られている場合 after は同色なのでスキップ (より高機能なブレンド導入時は更新検討)
-          }
         }
       }
     } else {
-      putShape({ ...opts, posX: x0, posY: y0, collectDiff: false });
+      putShape({ ...opts, posX: x0, posY: y0, manualDiff: false });
     }
 
     if (x0 === x1 && y0 === y1) break;
@@ -137,7 +121,7 @@ export function putShapeLine(opts: PutShapeLineOptions) {
     }
   }
 
-  if (collectDiff) {
+  if (manualDiff) {
     aggregated = Array.from(diffMap.values());
     return aggregated;
   }

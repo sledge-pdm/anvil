@@ -31,6 +31,14 @@ export class LayerDiffs {
     after: Uint8ClampedArray;
   };
 
+  getDiffs() {
+    return {
+      pixel: this.pixelDiffs,
+      tile: this.tileFills,
+      whole: this.wholeBufferChange,
+    };
+  }
+
   /**
    * Add a pixel-level change
    */
