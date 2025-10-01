@@ -91,6 +91,11 @@ export class LayerDiffsController {
       patch.whole = pending.wholeBuffer;
     }
 
+    // Partial buffer change
+    if (pending.partialBuffer) {
+      patch.partial = pending.partialBuffer;
+    }
+
     // Tile fills
     if (pending.tileFills.length > 0) {
       patch.tiles = pending.tileFills;
@@ -125,6 +130,10 @@ export class LayerDiffsController {
 
     if (pending.wholeBuffer) {
       patch.whole = pending.wholeBuffer;
+    }
+
+    if (pending.partialBuffer) {
+      patch.partial = pending.partialBuffer;
     }
 
     if (pending.tileFills.length > 0) {

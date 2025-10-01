@@ -57,6 +57,36 @@ export class Anvil {
     this.tilesController.setAllDirty();
   }
 
+  setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: Uint8ClampedArray): void {
+    const { x, y, width: w, height: h } = boundBox;
+
+    if (w > 0 && h > 0) {
+      const buf = this.getBufferData();
+      if (buf) {
+        for (let row = 0; row < h; row++) {
+          const sy = y + row;
+          if (sy < 0 || sy >= this.getHeight()) continue;
+          const srcOffset = row * w * 4;
+          const dstOffset = (sy * this.getWidth() + x) * 4;
+          // Clamp horizontal copy within layer bounds
+          let copyW = w;
+          let srcXOffset = 0;
+          if (x < 0) {
+            // shift source start
+            const shift = -x;
+            srcXOffset = shift * 4;
+            copyW -= shift;
+          }
+          if (x + copyW > this.getWidth()) {
+            copyW = this.getWidth() - x;
+          }
+          if (copyW <= 0) continue;
+          buf.set(source.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
+        }
+      }
+    }
+  }
+
   /**
    * Get the current buffer data
    * @returns Copy of the current pixel buffer
@@ -194,6 +224,27 @@ export class Anvil {
     if (before.length !== after.length) throw new Error('addWholeBufferChange: length mismatch');
     this.diffsController.addWholeBufferChange(before, after);
     this.tilesController.setAllDirty();
+  }
+
+  /**
+   * Register a partial rectangular diff. Caller provides before/after sub-buffer.
+   * Marks tiles overlapping the rectangle as dirty.
+   */
+  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, before: Uint8ClampedArray, after: Uint8ClampedArray): void {
+    // Delegate to LayerDiffs internal object (need to cast to access)
+    // We extend diffsController via its underlying diffs instance method "addPartialBufferChange".
+    // @ts-ignore internal access
+    this.diffsController.diffs.addPartialBufferChange(boundBox, before, after);
+    // Mark tiles dirty
+    const startTileX = Math.floor(boundBox.x / this.tileSize);
+    const startTileY = Math.floor(boundBox.y / this.tileSize);
+    const endTileX = Math.floor((boundBox.x + boundBox.width - 1) / this.tileSize);
+    const endTileY = Math.floor((boundBox.y + boundBox.height - 1) / this.tileSize);
+    for (let ty = startTileY; ty <= endTileY; ty++) {
+      for (let tx = startTileX; tx <= endTileX; tx++) {
+        this.tilesController.markDirtyByPixel(tx * this.tileSize, ty * this.tileSize);
+      }
+    }
   }
 
   // Resize operations

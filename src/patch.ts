@@ -22,6 +22,13 @@ export interface Patch {
     before: Uint32Array; // packed RGBA32
     after: Uint32Array; // packed RGBA32
   }>;
+
+  // Partial rectangular buffer replacement (sub-rectangle of layer)
+  partial?: {
+    boundBox: { x: number; y: number; width: number; height: number };
+    before: Uint8ClampedArray; // length = w*h*4
+    after: Uint8ClampedArray; // length = w*h*4
+  };
 }
 
 // Metadata for patch application
