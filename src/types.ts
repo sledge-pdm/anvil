@@ -50,22 +50,3 @@ export function linearToTileIndex(linear: number, cols: number): TileIndex {
     col: linear % cols,
   };
 }
-
-// Patch types for change tracking
-export interface LayerPatch {
-  pixels?: Array<{
-    tile: TileIndex;
-    idx: number[];
-    before: RGBA[];
-    after: RGBA[];
-  }>;
-  tiles?: Array<{
-    tile: TileIndex;
-    before: RGBA;
-    after: RGBA;
-  }>;
-  whole?: {
-    before: Uint8ClampedArray;
-    after: Uint8ClampedArray;
-  };
-}

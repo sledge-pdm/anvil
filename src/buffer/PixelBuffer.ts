@@ -5,8 +5,8 @@ import type { Point, RGBA, Size } from '../types.js';
  * Model responsibility: owns buffer state, provides bounds-checked access
  */
 export class PixelBuffer {
-  public readonly width: number;
-  public readonly height: number;
+  public width: number;
+  public height: number;
   public data: Uint8ClampedArray;
 
   constructor(width: number, height: number, initialData?: Uint8ClampedArray) {
@@ -95,8 +95,8 @@ export class PixelBuffer {
     }
 
     // Update properties - TypeScript requires this pattern for readonly fields
-    (this as any).width = newW;
-    (this as any).height = newH;
+    this.width = newW;
+    this.height = newH;
     this.data = newBuf;
   }
 

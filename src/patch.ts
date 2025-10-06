@@ -1,13 +1,7 @@
 import type { TileIndex } from './types.js';
 
-// Patch structure for undo/redo operations
-export interface Patch {
-  // Whole buffer replacement (for large changes like canvas resize)
-  whole?: {
-    before: Uint8ClampedArray;
-    after: Uint8ClampedArray;
-  };
-
+// Patch types for change tracking
+export interface LayerPatch {
   // Tile-level uniform fills
   tiles?: Array<{
     tile: TileIndex;
@@ -28,6 +22,12 @@ export interface Patch {
     boundBox: { x: number; y: number; width: number; height: number };
     before: Uint8ClampedArray; // length = w*h*4
     after: Uint8ClampedArray; // length = w*h*4
+  };
+
+  // Whole buffer replacement (for large changes like canvas resize)
+  whole?: {
+    before: Uint8ClampedArray;
+    after: Uint8ClampedArray;
   };
 }
 

@@ -3,7 +3,8 @@ import { LayerDiffs } from './buffer/diff/LayerDiffs';
 import { LayerDiffsController } from './buffer/diff/LayerDiffsController';
 import { LayerTiles } from './buffer/tile/LayerTiles';
 import { LayerTilesController } from './buffer/tile/LayerTilesController';
-import type { LayerPatch, Point, RGBA, Size, TileIndex } from './types';
+import { LayerPatch } from './patch';
+import type { Point, RGBA, Size, TileIndex } from './types';
 
 /**
  * Anvil - Main facade for pixel-based drawing operations
@@ -39,18 +40,29 @@ export class Anvil {
     return this.buffer.height;
   }
 
+  resetBuffer(buffer?: Uint8ClampedArray): void {
+    this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width * this.buffer.height * 4));
+  }
   /**
    * Load existing image data into the anvil
-   * @param imageData Existing pixel buffer to copy from
+   * @param buffer Existing pixel buffer to copy from
    */
-  loadImageData(imageData: Uint8ClampedArray): void {
+  replaceBuffer(buffer: Uint8ClampedArray, width?: number, height?: number): void {
+    if (width !== undefined && height !== undefined) {
+      console.log('resizing ', this.getWidth(), this.getHeight(), ' to ', width, height);
+      this.resize(width, height);
+      console.log('resized:  ', this.getWidth(), this.getHeight());
+    }
+
     const expectedLength = this.buffer.width * this.buffer.height * 4;
-    if (imageData.length !== expectedLength) {
-      throw new Error(`Image data length ${imageData.length} does not match expected ${expectedLength}`);
+    if (buffer.length !== expectedLength) {
+      throw new Error(
+        `Image data length ${buffer.length} does not match expected ${expectedLength}. Did you forget to resize anvil before replacing?`
+      );
     }
 
     // Copy data to internal buffer
-    this.buffer.data.set(imageData);
+    this.buffer.data.set(buffer);
 
     // Reset all tracking states
     this.diffsController.clearDiffs();
@@ -256,11 +268,15 @@ export class Anvil {
     this.diffsController.clearDiffs();
   }
 
-  resizeWithOffset(newWidth: number, newHeight: number, offsetX: number, offsetY: number): void {
-    const newSize: Size = { width: newWidth, height: newHeight };
-    const destOrigin: Point = { x: offsetX, y: offsetY };
-    this.buffer.resize(newSize, { destOrigin });
-    this.tilesController.resize(newWidth, newHeight);
+  resizeWithOffset(
+    newSize: Size,
+    options?: {
+      srcOrigin?: Point;
+      destOrigin?: Point;
+    }
+  ): void {
+    this.buffer.resize(newSize, options);
+    this.tilesController.resize(newSize.width, newSize.height);
     // Note: This would invalidate current diffs, so we clear them
     this.diffsController.clearDiffs();
   }
@@ -272,6 +288,60 @@ export class Anvil {
   previewPatch(): LayerPatch | null {
     const patch = this.diffsController.previewPatch();
     return (patch as LayerPatch) || null;
+  }
+
+  applyPatch(patch: LayerPatch, mode: 'undo' | 'redo') {
+    // Whole buffer
+    if (patch.whole) {
+      const target = mode === 'undo' ? patch.whole.before : patch.whole.after;
+      this.replaceBuffer(target);
+    }
+
+    // Partial rectangle (applies after whole, before tiles/pixels)
+    if (patch.partial) {
+      const { boundBox, before, after } = patch.partial;
+      const target = mode === 'undo' ? before : after;
+      this.setPartialBuffer(boundBox, target);
+      this.flush();
+    }
+
+    // Tile fills
+    patch.tiles?.forEach((t) => {
+      let packed = mode === 'undo' ? t.before : t.after;
+      if (mode === 'undo' && packed === undefined) {
+        packed = 0; // transparent RGBA(0,0,0,0)
+      }
+      if (packed === undefined) return; // redo 方向で after が無いケースは無視
+      const r = (packed >> 16) & 0xff;
+      const g = (packed >> 8) & 0xff;
+      const b = packed & 0xff;
+      const a = (packed >>> 24) & 0xff;
+      const tileSize = this.getTileSize();
+      const ox = t.tile.col * tileSize;
+      const oy = t.tile.row * tileSize;
+      this.fillRect(ox, oy, tileSize, tileSize, [r, g, b, a]);
+    });
+
+    // Pixels
+    patch.pixels?.forEach((p) => {
+      const values = mode === 'undo' ? p.before : p.after;
+      const tileSize = this.getTileSize();
+      const ox = p.tile.col * tileSize;
+      const oy = p.tile.row * tileSize;
+      for (let i = 0; i < p.idx.length; i++) {
+        const local = p.idx[i];
+        const dx = local % tileSize;
+        const dy = (local / tileSize) | 0;
+        const packed = values[i] >>> 0;
+        const r = (packed >> 16) & 0xff;
+        const g = (packed >> 8) & 0xff;
+        const b = packed & 0xff;
+        const a = (packed >>> 24) & 0xff;
+        this.setPixel(ox + dx, oy + dy, [r, g, b, a]);
+      }
+    });
+
+    this.flush();
   }
 
   flush(): LayerPatch | null {
