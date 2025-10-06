@@ -1,6 +1,6 @@
 // Public API exports for @sledge/anvil
-export type { Patch, PatchMetadata } from './src/patch.js';
-export type { LayerPatch, Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types.js';
+export type { LayerPatch, PatchMetadata } from './src/patch.js';
+export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types.js';
 
 // Core classes
 export { Anvil } from './src/Anvil.js';
