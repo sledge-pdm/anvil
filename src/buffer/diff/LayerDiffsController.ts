@@ -1,4 +1,4 @@
-import type { Patch } from '../../patch.js';
+import type { LayerPatch } from '../../patch.js';
 import type { RGBA, TileIndex } from '../../types.js';
 import { LayerTilesController } from '../tile/LayerTilesController.js';
 import { LayerDiffs } from './LayerDiffs.js';
@@ -78,13 +78,13 @@ export class LayerDiffsController {
   /**
    * Flush accumulated changes into a Patch and clear internal state
    */
-  flush(): Patch | undefined {
+  flush(): LayerPatch | undefined {
     if (!this.diffs.hasPendingChanges()) {
       return undefined;
     }
 
     const pending = this.diffs.getPendingChanges();
-    const patch: Patch = {};
+    const patch: LayerPatch = {};
 
     // Whole buffer changes
     if (pending.wholeBuffer) {
@@ -120,13 +120,13 @@ export class LayerDiffsController {
   /**
    * Force flush without clearing (for preview/inspection)
    */
-  previewPatch(): Patch | undefined {
+  previewPatch(): LayerPatch | undefined {
     if (!this.diffs.hasPendingChanges()) {
       return undefined;
     }
 
     const pending = this.diffs.getPendingChanges();
-    const patch: Patch = {};
+    const patch: LayerPatch = {};
 
     if (pending.wholeBuffer) {
       patch.whole = pending.wholeBuffer;

@@ -1,0 +1,22 @@
+{
+  "name": "anvil-ops-wasm",
+  "type": "module",
+  "collaborators": [
+    "innsbluck <innsbluck@gmail.com>"
+  ],
+  "description": "wasm module for anvil",
+  "version": "0.1.0",
+  "license": "MIT/Apache-2.0",
+  "files": [
+    "anvil_ops_wasm_bg.wasm",
+    "anvil_ops_wasm.js",
+    "anvil_ops_wasm_bg.js",
+    "anvil_ops_wasm.d.ts"
+  ],
+  "main": "anvil_ops_wasm.js",
+  "types": "anvil_ops_wasm.d.ts",
+  "sideEffects": [
+    "./anvil_ops_wasm.js",
+    "./snippets/*"
+  ]
+}

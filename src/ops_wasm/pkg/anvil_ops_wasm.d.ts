@@ -1,0 +1,17 @@
+/* tslint:disable */
+/* eslint-disable */
+export function patch_buffer_rgba(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number): Uint8Array;
+/**
+ * スキャンライン方式のFloodFill実装
+ *
+ * この実装は以下の特徴を持ちます：
+ * - メモリ効率的なスキャンライン方式
+ * - スタックオーバーフロー回避
+ * - 高速な隣接色判定
+ * - 選択範囲制限サポート
+ */
+export function scanline_flood_fill(buffer: Uint8Array, width: number, height: number, start_x: number, start_y: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number, threshold: number): boolean;
+/**
+ * 選択範囲制限付きスキャンライン FloodFill
+ */
+export function scanline_flood_fill_with_mask(buffer: Uint8Array, width: number, height: number, start_x: number, start_y: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number, threshold: number, selection_mask: Uint8Array, limit_mode: string): boolean;
