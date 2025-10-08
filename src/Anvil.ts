@@ -259,6 +259,10 @@ export class Anvil {
     }
   }
 
+  hasPendingChanges(): boolean {
+    return this.diffsController.hasPendingChanges();
+  }
+
   // Resize operations
   resize(newWidth: number, newHeight: number): void {
     const newSize: Size = { width: newWidth, height: newHeight };

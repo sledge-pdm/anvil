@@ -46,11 +46,11 @@ describe('putShape', () => {
   test('collectDiff returns changed pixels once', () => {
     const anvil = new Anvil(20, 20, 8);
     const shape = makeSquareMask(3);
-    const diffs = putShape({ anvil, shape, posX: 10, posY: 10, color: [0, 255, 0, 200], collectDiff: true });
+    const diffs = putShape({ anvil, shape, posX: 10, posY: 10, color: [0, 255, 0, 200], manualDiff: true });
     expect(diffs).toBeDefined();
     expect(diffs!.length).toBe(9);
     // 再適用 (同色) で diff 数が同じ or 0 になるか (仕様: 再度 collect で before が同色でも取得)
-    const diffs2 = putShape({ anvil, shape, posX: 10, posY: 10, color: [0, 255, 0, 200], collectDiff: true });
+    const diffs2 = putShape({ anvil, shape, posX: 10, posY: 10, color: [0, 255, 0, 200], manualDiff: true });
     expect(diffs2!.length).toBe(9);
   });
 });

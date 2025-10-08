@@ -213,7 +213,12 @@ describe('Anvil Facade Integration', () => {
       anvil.setPixel(10, 10, originalColor);
 
       // Resize with offset (simulate moving canvas origin)
-      anvil.resizeWithOffset(width * 2, height * 2, 50, 50);
+      anvil.resizeWithOffset(
+        { width: width * 2, height: height * 2 },
+        {
+          destOrigin: { x: 50, y: 50 },
+        }
+      );
 
       expect(anvil.getWidth()).toBe(width * 2);
       expect(anvil.getHeight()).toBe(height * 2);

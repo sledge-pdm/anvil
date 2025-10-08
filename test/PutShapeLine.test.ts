@@ -22,7 +22,7 @@ describe('putShapeLine', () => {
   test('collectDiff aggregates unique pixels over line', () => {
     const anvil = new Anvil(30, 30, 8);
     const mask = makeDotMask();
-    const diffs = putShapeLine({ anvil, shape: mask, fromPosX: 0, fromPosY: 0, posX: 15, posY: 15, color: [0, 255, 0, 255], collectDiff: true });
+    const diffs = putShapeLine({ anvil, shape: mask, fromPosX: 0, fromPosY: 0, posX: 15, posY: 15, color: [0, 255, 0, 255], manualDiff: true });
     expect(diffs).toBeDefined();
     // 対角線の長さ (Bresenham は 16 ピクセルになる想定: 0..15)
     expect(diffs!.length).toBeGreaterThanOrEqual(15);
