@@ -1,3 +1,4 @@
+import { resizeBuffer } from '../ops/resize/Resize.js';
 import type { Point, RGBA, Size } from '../types.js';
 
 /**
@@ -71,33 +72,18 @@ export class PixelBuffer {
       destOrigin?: Point;
     }
   ): void {
-    const { width: newW, height: newH } = newSize;
-    const srcOrigin = options?.srcOrigin ?? { x: 0, y: 0 };
-    const destOrigin = options?.destOrigin ?? { x: 0, y: 0 };
-
-    const oldW = this.width;
-    const oldH = this.height;
-    const oldBuf = this.data;
-    const newBuf = new Uint8ClampedArray(newW * newH * 4);
-
-    // Calculate copy region
-    const copyW = Math.max(0, Math.min(oldW - srcOrigin.x, newW - destOrigin.x));
-    const copyH = Math.max(0, Math.min(oldH - srcOrigin.y, newH - destOrigin.y));
-
-    // Copy row by row
-    for (let y = 0; y < copyH; y++) {
-      const srcRow = (y + srcOrigin.y) * oldW + srcOrigin.x;
-      const destRow = (y + destOrigin.y) * newW + destOrigin.x;
-      const srcOffset = srcRow * 4;
-      const destOffset = destRow * 4;
-
-      newBuf.set(oldBuf.subarray(srcOffset, srcOffset + copyW * 4), destOffset);
-    }
-
-    // Update properties - TypeScript requires this pattern for readonly fields
-    this.width = newW;
-    this.height = newH;
-    this.data = newBuf;
+    const buf = resizeBuffer(
+      this.data,
+      {
+        width: this.width,
+        height: this.height,
+      },
+      newSize,
+      options
+    );
+    this.data = buf;
+    this.width = newSize.width;
+    this.height = newSize.height;
   }
 
   /**
