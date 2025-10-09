@@ -1,7 +1,5 @@
 import { raw_to_webp, webp_to_raw } from '../../ops_wasm/pkg/anvil_ops_wasm';
 import { PackedDiffs, PendingDiffs } from '../../types/patch/Patch';
-import { PackedPixelPatchData } from '../../types/patch/pixel';
-import { PackedTileFillPatchData } from '../../types/patch/tileFill';
 import { RGBA, TileIndex } from '../../types/types';
 
 export function rawToWebp(buffer: Uint8Array, width: number, height: number): Uint8Array {
@@ -73,28 +71,24 @@ export function packPending(pendingDiffs: PendingDiffs): PackedDiffs {
 
   // Tile fills
   if (pendingDiffs.tileFills.size > 0) {
-    const packedTileFills: PackedTileFillPatchData[] = [];
-    pendingDiffs.tileFills.values().forEach((tf) => {
-      packedTileFills.push({
+    packed.tiles = Object.values(pendingDiffs.tileFills).map((tf) => {
+      return {
         tileIndex: tf.tileIndex,
         before: tf.before && rgbaToPackedU32(tf.before),
         after: rgbaToPackedU32(tf.after),
-      });
+      };
     });
-    packed.tiles = packedTileFills;
   }
 
   // Pixel changes - convert to the Patch format
   if (pendingDiffs.pixels.length > 0) {
-    const packedPixels: PackedPixelPatchData[] = [];
-    pendingDiffs.pixels.forEach((px) => {
-      packedPixels.push({
+    packed.pixels = pendingDiffs.pixels.map((px) => {
+      return {
         x: px.x,
         y: px.y,
         color: rgbaToPackedU32(px.color),
-      });
+      };
     });
-    packed.pixels = packedPixels;
   }
 
   return packed;
