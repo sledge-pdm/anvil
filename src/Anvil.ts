@@ -329,7 +329,7 @@ export class Anvil {
       return { x: p.x, y: p.y, color: rgbaToPackedU32(swapColor) };
     });
 
-    this.flushDiffs();
+    this.tilesController.setAllDirty();
   }
 
   flushDiffs(): PackedDiffs | null {
