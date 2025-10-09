@@ -16,10 +16,6 @@ export class Anvil {
   private tilesController: LayerTilesController;
   private diffsController: LayerDiffsController;
   private readonly tileSize: number;
-  // Batch mode flags/state
-  private _batchDepth = 0; // ネスト対応（念のため）
-  private _batchDirtyTiles: Set<string> | null = null;
-  private _batchUniformCheckTiles: Set<string> | null = null;
 
   constructor(width: number, height: number, tileSize = 32) {
     this.tileSize = tileSize;
@@ -158,20 +154,10 @@ export class Anvil {
 
     const oldColor = this.buffer.get(x, y);
     this.buffer.set(x, y, color);
-    if (this._batchDepth > 0) {
-      // defer tile + uniform detection
-      const tileIndex = this.tilesController.pixelToTileIndex(x, y);
-      const key = tileIndex.row + ',' + tileIndex.col;
-      this._batchDirtyTiles?.add(key);
-      // uniform チェックはバッチ終端でまとめて再判定するので候補として保持
-      this._batchUniformCheckTiles?.add(key);
-      this.diffsController.addPixel({ x, y, color: oldColor });
-    } else {
-      this.tilesController.markDirtyByPixel(x, y);
-      this.diffsController.addPixel({ x, y, color: oldColor });
-      const tileIndex = this.tilesController.pixelToTileIndex(x, y);
-      this.checkTileUniformity(tileIndex);
-    }
+    this.tilesController.markDirtyByPixel(x, y);
+    this.diffsController.addPixel({ x, y, color: oldColor });
+    const tileIndex = this.tilesController.pixelToTileIndex(x, y);
+    this.checkTileUniformity(tileIndex);
   }
 
   setDirty(x: number, y: number): void {
@@ -251,16 +237,8 @@ export class Anvil {
   addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray): void {
     // Use the diffsController's new public method
     this.diffsController.addPartial({ boundBox, swapBuffer });
-    // Mark tiles dirty
-    const startTileX = Math.floor(boundBox.x / this.tileSize);
-    const startTileY = Math.floor(boundBox.y / this.tileSize);
-    const endTileX = Math.floor((boundBox.x + boundBox.width - 1) / this.tileSize);
-    const endTileY = Math.floor((boundBox.y + boundBox.height - 1) / this.tileSize);
-    for (let ty = startTileY; ty <= endTileY; ty++) {
-      for (let tx = startTileX; tx <= endTileX; tx++) {
-        this.tilesController.markDirtyByPixel(tx * this.tileSize, ty * this.tileSize);
-      }
-    }
+    // Note: dirty tiles are already set by the drawing operations (putShape/putShapeLine)
+    // so we don't need to mark additional tiles dirty here
   }
 
   hasPendingChanges(): boolean {
@@ -358,43 +336,6 @@ export class Anvil {
 
   discardPendingChanges(): void {
     this.diffsController.discardPendingChanges();
-  }
-
-  /**
-   * Start batch mode: tile dirty/uniform 判定を遅延させる。
-   * ネスト可能。既にバッチ中ならカウンタのみ増やす。
-   */
-  beginBatch(): void {
-    if (this._batchDepth === 0) {
-      this._batchDirtyTiles = new Set();
-      this._batchUniformCheckTiles = new Set();
-    }
-    this._batchDepth++;
-  }
-
-  /**
-   * End batch: 0 に戻ったタイミングでまとめて tile dirty と uniformity 再判定。
-   */
-  endBatch(): void {
-    if (this._batchDepth === 0) return;
-    this._batchDepth--;
-    if (this._batchDepth > 0) return; // まだネスト内
-
-    const dirty = this._batchDirtyTiles!;
-    const uni = this._batchUniformCheckTiles!;
-    this._batchDirtyTiles = null;
-    this._batchUniformCheckTiles = null;
-
-    // Dirty 適用 (uniformity は後でまとめて判定)
-    for (const key of dirty) {
-      const [row, col] = key.split(',').map((v) => parseInt(v, 10));
-      this.tilesController.markDirtyByPixel(row * this.tileSize, col * this.tileSize); // 任意のピクセルで dirty 化
-    }
-    // uniformity 再チェック
-    for (const key of uni) {
-      const [row, col] = key.split(',').map((v) => parseInt(v, 10));
-      this.checkTileUniformity({ row, col });
-    }
   }
 
   // Tile management
