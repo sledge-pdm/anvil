@@ -1,4 +1,4 @@
-import { RGBA, TileIndex } from '../types';
+import { RGBA } from '../types';
 
 /**
  * Pixel Diff
