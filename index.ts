@@ -8,8 +8,7 @@ export { PixelBuffer } from './src/buffer/PixelBuffer.js';
 
 // For advanced usage - direct access to components
 export { LayerDiffsController } from './src/buffer/LayerDiffsController.js';
-export { LayerTiles } from './src/buffer/tile/LayerTiles.js';
-export { LayerTilesController } from './src/buffer/tile/LayerTilesController.js';
+export { LayerTilesController } from './src/buffer/LayerTilesController.js';
 export {
   linearToTileIndex,
   packPending,

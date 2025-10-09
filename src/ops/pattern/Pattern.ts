@@ -107,6 +107,7 @@ export function putShape(opts: PutShapeOptions) {
           target[ti + 3] = color[3];
           const diff = { x: tx, y: ty, color: before };
           diffs!.push(diff);
+          opts.anvil.setDirty(tx, ty);
           if (pixelAcc) pixelAcc.set(key, diff);
         } else {
           anvil.setPixel(tx, ty, color);
@@ -270,6 +271,7 @@ export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | unde
         buf[ti + 2] = color[2];
         buf[ti + 3] = color[3];
         diffs!.push({ x: gx, y: gy, color: before });
+        opts.anvil.setDirty(gx, gy);
       } else {
         opts.anvil.setPixel(gx, gy, color);
       }

@@ -1,15 +1,16 @@
-import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../../ops/packing/Packing.js';
-import type { RGBA, TileBounds, TileIndex, TileInfo } from '../../types/types.js';
+import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/packing/Packing.js';
+import type { RGBA, TileBounds, TileIndex, TileInfo } from '../types/types.js';
+import type { PixelBuffer } from './PixelBuffer.js';
 
 /**
- * Model: Manages tile grid state - dirty flags and uniform colors
- * Responsible for: bitset storage, uniform color tracking, bounds calculation
+ * Controller: High-level tile operations and pixel-to-tile coordination
+ * Responsible for: business logic, buffer integration, uniform detection
  */
-export class LayerTiles {
+export class LayerTilesController {
   public readonly tileSize: number;
-  public readonly rows: number;
-  public readonly cols: number;
-  public readonly totalTiles: number;
+  public rows: number;
+  public cols: number;
+  public totalTiles: number;
 
   // Bitset storage for flags (more memory efficient than boolean arrays)
   private dirtyFlags: Uint32Array;
@@ -18,7 +19,12 @@ export class LayerTiles {
   // Sparse storage for uniform colors (only store when tile is uniform)
   private uniformColors: Map<number, number> = new Map(); // tileIndex -> packed RGBA32
 
-  constructor(width: number, height: number, tileSize = 32) {
+  constructor(
+    private buffer: PixelBuffer,
+    width: number,
+    height: number,
+    tileSize = 32
+  ) {
     this.tileSize = tileSize;
     this.cols = Math.ceil(width / tileSize);
     this.rows = Math.ceil(height / tileSize);
@@ -28,6 +34,102 @@ export class LayerTiles {
     const flagArraySize = Math.ceil(this.totalTiles / 32);
     this.dirtyFlags = new Uint32Array(flagArraySize);
     this.uniformFlags = new Uint32Array(flagArraySize);
+  }
+
+  /**
+   * Mark tile dirty by pixel coordinates
+   */
+  markDirtyByPixel(x: number, y: number): void {
+    const tileIndex = this.pixelToTileIndex(x, y);
+    this.setDirty(tileIndex, true);
+
+    // If tile was uniform, it's no longer uniform after pixel change
+    if (this.isUniform(tileIndex)) {
+      this.setUniform(tileIndex, false);
+    }
+  }
+
+  /**
+   * Fill entire tile with uniform color
+   * Returns the previous uniform color if it was uniform, undefined otherwise
+   */
+  fillTile(tileIndex: TileIndex, color: RGBA): RGBA | undefined {
+    if (!this.isValidTileIndex(tileIndex)) return undefined;
+
+    const previousColor = this.getUniformColor(tileIndex);
+    const bounds = this.getTileBounds(tileIndex);
+
+    // Fill the buffer area
+    for (let ty = 0; ty < bounds.height; ty++) {
+      for (let tx = 0; tx < bounds.width; tx++) {
+        const x = bounds.x + tx;
+        const y = bounds.y + ty;
+
+        if (this.buffer.isInBounds(x, y)) {
+          this.buffer.set(x, y, color);
+        }
+      }
+    }
+
+    // Mark as uniform and dirty
+    this.setUniform(tileIndex, true, color);
+    this.setDirty(tileIndex, true);
+
+    return previousColor;
+  }
+
+  /**
+   * Check if a tile is actually uniform by sampling the buffer
+   * (useful for validation or after manual buffer modifications)
+   */
+  detectTileUniformity(tileIndex: TileIndex): boolean {
+    if (!this.isValidTileIndex(tileIndex)) return false;
+
+    const bounds = this.getTileBounds(tileIndex);
+    let firstColor: RGBA | undefined = undefined;
+
+    for (let ty = 0; ty < bounds.height; ty++) {
+      for (let tx = 0; tx < bounds.width; tx++) {
+        const x = bounds.x + tx;
+        const y = bounds.y + ty;
+
+        if (!this.buffer.isInBounds(x, y)) continue;
+
+        const color = this.buffer.get(x, y);
+
+        if (!firstColor) {
+          firstColor = color;
+        } else if (color[0] !== firstColor[0] || color[1] !== firstColor[1] || color[2] !== firstColor[2] || color[3] !== firstColor[3]) {
+          return false; // Not uniform
+        }
+      }
+    }
+
+    // Update internal state to match reality
+    if (firstColor) {
+      this.setUniform(tileIndex, true, firstColor);
+    }
+
+    return true;
+  }
+
+  /**
+   * Validate all tiles' uniformity against buffer contents
+   * (expensive operation - mainly for debugging/testing)
+   */
+  validateAllTileUniformity(): void {
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        this.detectTileUniformity({ row, col });
+      }
+    }
+  }
+
+  getRows(): number {
+    return this.rows;
+  }
+  getCols(): number {
+    return this.cols;
   }
 
   /**
@@ -227,5 +329,49 @@ export class LayerTiles {
       uniformTiles: uniformCount,
       memoryUsage,
     };
+  }
+
+  /**
+   * Get all dirty tile information
+   */
+  getDirtyTiles(): TileInfo[] {
+    const result: TileInfo[] = [];
+    this.forEachDirty((info) => result.push(info));
+    return result;
+  }
+
+  /**
+   * Resize tile grid to match new buffer dimensions
+   */
+  resize(newWidth: number, newHeight: number): void {
+    const oldCols = this.cols;
+    const oldRows = this.rows;
+    // Create new tile grid
+    this.cols = Math.ceil(newWidth / this.tileSize);
+    this.rows = Math.ceil(newHeight / this.tileSize);
+    this.totalTiles = this.rows * this.cols;
+
+    // Allocate bitsets (32 tiles per uint32)
+    const flagArraySize = Math.ceil(this.totalTiles / 32);
+    this.dirtyFlags = new Uint32Array(flagArraySize);
+    this.uniformFlags = new Uint32Array(flagArraySize);
+
+    // Copy over existing tile states where they overlap
+    const minRows = Math.min(oldRows, this.rows);
+    const minCols = Math.min(oldCols, this.cols);
+
+    for (let row = 0; row < minRows; row++) {
+      for (let col = 0; col < minCols; col++) {
+        const index = { row, col };
+        const oldInfo = this.getTileInfo(index);
+
+        if (oldInfo.isDirty) {
+          this.setDirty(index, true);
+        }
+        if (oldInfo.isUniform && oldInfo.uniformColor) {
+          this.setUniform(index, true, oldInfo.uniformColor);
+        }
+      }
+    }
   }
 }

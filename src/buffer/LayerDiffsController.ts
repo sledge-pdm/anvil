@@ -4,7 +4,7 @@ import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';
 import { TileFillPatchData } from '../types/patch/tileFill.js';
 import { WholePatchData } from '../types/patch/whole.js';
-import { LayerTilesController } from './tile/LayerTilesController.js';
+import { LayerTilesController } from './LayerTilesController.js';
 
 export class LayerDiffsController {
   diffs: PendingDiffs = {

@@ -1,7 +1,6 @@
 import { LayerDiffsController } from './buffer/LayerDiffsController';
+import { LayerTilesController } from './buffer/LayerTilesController';
 import { PixelBuffer } from './buffer/PixelBuffer';
-import { LayerTiles } from './buffer/tile/LayerTiles';
-import { LayerTilesController } from './buffer/tile/LayerTilesController';
 import { packedU32ToRgba, rawToWebp, rgbaToPackedU32, webpToRaw } from './ops/packing/Packing';
 import { PackedDiffs } from './types/patch/Patch';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
@@ -27,7 +26,7 @@ export class Anvil {
 
     // Initialize core components
     this.buffer = new PixelBuffer(width, height);
-    this.tilesController = new LayerTilesController(new LayerTiles(width, height, tileSize), this.buffer);
+    this.tilesController = new LayerTilesController(this.buffer, width, height, tileSize);
     this.diffsController = new LayerDiffsController(this.tilesController, tileSize);
   }
 
@@ -173,6 +172,10 @@ export class Anvil {
       const tileIndex = this.tilesController.pixelToTileIndex(x, y);
       this.checkTileUniformity(tileIndex);
     }
+  }
+
+  setDirty(x: number, y: number): void {
+    this.tilesController.markDirtyByPixel(x, y);
   }
 
   private checkTileUniformity(tileIndex: { row: number; col: number }): void {
@@ -343,6 +346,8 @@ export class Anvil {
     });
 
     this.flush();
+    // TODO: set dirty depending on changed areas
+    this.tilesController.setAllDirty();
   }
 
   flush(): PackedDiffs | null {
