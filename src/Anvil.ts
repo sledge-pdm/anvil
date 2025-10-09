@@ -23,7 +23,7 @@ export class Anvil {
     // Initialize core components
     this.buffer = new PixelBuffer(width, height);
     this.tilesController = new LayerTilesController(this.buffer, width, height, tileSize);
-    this.diffsController = new LayerDiffsController(this.tilesController, tileSize);
+    this.diffsController = new LayerDiffsController();
   }
 
   // Basic properties
@@ -60,7 +60,7 @@ export class Anvil {
     this.buffer.data.set(buffer);
 
     // Reset all tracking states
-    this.diffsController.discardPendingChanges();
+    this.diffsController.discard();
     this.tilesController.setAllDirty();
   }
 
@@ -230,15 +230,21 @@ export class Anvil {
     this.tilesController.setAllDirty();
   }
 
-  /**
-   * Register a partial rectangular diff (swap method). Caller provides replacement buffer.
-   * Marks tiles overlapping the rectangle as dirty.
-   */
-  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray): void {
-    // Use the diffsController's new public method
+  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray, setDirty?: boolean): void {
     this.diffsController.addPartial({ boundBox, swapBuffer });
-    // Note: dirty tiles are already set by the drawing operations (putShape/putShapeLine)
-    // so we don't need to mark additional tiles dirty here
+
+    if (setDirty) {
+      const tileSize = this.getTileSize();
+      const startTileX = Math.floor(boundBox.x / tileSize);
+      const endTileX = Math.floor((boundBox.x + boundBox.width - 1) / tileSize);
+      const startTileY = Math.floor(boundBox.y / tileSize);
+      const endTileY = Math.floor((boundBox.y + boundBox.height - 1) / tileSize);
+      for (let ty = startTileY; ty <= endTileY; ty++) {
+        for (let tx = startTileX; tx <= endTileX; tx++) {
+          this.tilesController.setDirty({ row: ty, col: tx }, true);
+        }
+      }
+    }
   }
 
   hasPendingChanges(): boolean {
@@ -251,7 +257,7 @@ export class Anvil {
     this.buffer.resize(newSize);
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffsController.discardPendingChanges();
+    this.diffsController.discard();
   }
 
   resizeWithOffset(
@@ -264,7 +270,7 @@ export class Anvil {
     this.buffer.resize(newSize, options);
     this.tilesController.resize(newSize.width, newSize.height);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffsController.discardPendingChanges();
+    this.diffsController.discard();
   }
 
   previewPatch(): PackedDiffs | null {
@@ -323,19 +329,16 @@ export class Anvil {
       return { x: p.x, y: p.y, color: rgbaToPackedU32(swapColor) };
     });
 
-    this.flush();
-    // TODO: set dirty depending on changed areas
-    this.tilesController.setAllDirty();
+    this.flushDiffs();
   }
 
-  flush(): PackedDiffs | null {
+  flushDiffs(): PackedDiffs | null {
     const patch = this.diffsController.flush();
-    this.tilesController.clearAllDirty();
     return (patch as PackedDiffs) || null;
   }
 
-  discardPendingChanges(): void {
-    this.diffsController.discardPendingChanges();
+  discardDiffs(): void {
+    this.diffsController.discard();
   }
 
   // Tile management

@@ -4,7 +4,6 @@ import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';
 import { TileFillPatchData } from '../types/patch/tileFill.js';
 import { WholePatchData } from '../types/patch/whole.js';
-import { LayerTilesController } from './LayerTilesController.js';
 
 export class LayerDiffsController {
   diffs: PendingDiffs = {
@@ -14,10 +13,7 @@ export class LayerDiffsController {
     whole: undefined,
   };
 
-  constructor(
-    private tilesController: LayerTilesController,
-    private tileSize: number
-  ) {}
+  constructor() {}
 
   addPixel(unpacked: PixelPatchData) {
     this.diffs.pixels.push(unpacked);
@@ -33,7 +29,6 @@ export class LayerDiffsController {
     const expected = boundBox.width * boundBox.height * 4;
     if (swapBuffer.length !== expected) throw new Error(`partial buffer length ${swapBuffer.length} does not match bbox area * 4 = ${expected}`);
     this.diffs.partial = unpacked;
-    // Clear fine-grained diffs (they are superseded)
     this.diffs.pixels = [];
     this.diffs.tileFills.clear();
   }
@@ -63,7 +58,7 @@ export class LayerDiffsController {
     const patch: PackedDiffs = packPending(this.diffs);
 
     // Clear accumulated changes
-    this.discardPendingChanges();
+    this.discard();
 
     return patch;
   }
@@ -84,7 +79,7 @@ export class LayerDiffsController {
   /**
    * Clear all pending changes without creating a patch
    */
-  discardPendingChanges(): void {
+  discard(): void {
     this.diffs.pixels = [];
     this.diffs.tileFills.clear();
     this.diffs.partial = undefined;
