@@ -362,11 +362,10 @@ export class Anvil {
     return tileInfo.uniformColor || null;
   }
 
-  /**
-   * Clear all dirty tile flags (typically after renderer finishes uploading).
-   * Note: flush() already clears dirty flags when producing a patch, but
-   * full texture uploads (e.g. initial frame, resize) may require manual clear.
-   */
+  setAllDirty(): void {
+    this.tilesController.setAllDirty();
+  }
+
   clearDirtyTiles(): void {
     this.tilesController.clearAllDirty();
   }
