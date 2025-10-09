@@ -1,5 +1,5 @@
 import { resizeBuffer } from '../ops/resize/Resize.js';
-import type { Point, RGBA, Size } from '../types.js';
+import type { Point, RGBA, Size } from '../types/types.js';
 
 /**
  * Core pixel buffer operations - raw RGBA8 array management

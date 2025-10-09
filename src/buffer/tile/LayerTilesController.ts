@@ -1,5 +1,5 @@
 import type { PixelBuffer } from '../../buffer/PixelBuffer.js';
-import type { RGBA, TileIndex, TileInfo } from '../../types.js';
+import type { RGBA, TileIndex, TileInfo } from '../../types/types.js';
 import { LayerTiles } from './LayerTiles.js';
 
 /**
@@ -103,6 +103,13 @@ export class LayerTilesController {
         this.detectTileUniformity({ row, col });
       }
     }
+  }
+
+  getRows(): number {
+    return this.tiles.rows;
+  }
+  getCols(): number {
+    return this.tiles.cols;
   }
 
   /**

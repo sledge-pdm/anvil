@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PixelBuffer } from '../src/buffer/PixelBuffer';
 import { LayerDiffs } from '../src/buffer/diff/LayerDiffs';
-import { LayerDiffsController } from '../src/buffer/diff/LayerDiffsController';
+import { LayerDiffsController } from '../src/buffer/LayerDiffsController';
+import { PixelBuffer } from '../src/buffer/PixelBuffer';
 import { LayerTiles } from '../src/buffer/tile/LayerTiles';
 import { LayerTilesController } from '../src/buffer/tile/LayerTilesController';
-import type { RGBA, TileIndex } from '../src/types';
+import type { RGBA, TileIndex } from '../src/types/types';
 
 describe('LayerDiffs and LayerDiffsController', () => {
   let diffs: LayerDiffs;
@@ -21,7 +21,7 @@ describe('LayerDiffs and LayerDiffsController', () => {
     tiles = new LayerTiles(bufferWidth, bufferHeight, tileSize);
     tilesController = new LayerTilesController(tiles, buffer);
     diffs = new LayerDiffs();
-    diffsController = new LayerDiffsController(diffs, tilesController, tileSize);
+    diffsController = new LayerDiffsController(diffs, tilesController, tileSize, bufferWidth, bufferHeight);
   });
 
   describe('LayerDiffs Model', () => {
@@ -164,12 +164,12 @@ describe('LayerDiffs and LayerDiffsController', () => {
       expect(patch!.tiles!).toHaveLength(1);
     });
 
-    it('should flush changes correctly', () => {
+    it('should flush changes correctly', async () => {
       diffsController.addPixel(10, 10, [0, 0, 0, 0], [255, 255, 255, 255]);
 
       expect(diffs.hasPendingChanges()).toBe(true);
 
-      const patch = diffsController.flush();
+      const patch = await diffsController.flush();
 
       expect(patch).toBeDefined();
       expect(diffs.hasPendingChanges()).toBe(false);
@@ -244,7 +244,7 @@ describe('LayerDiffs and LayerDiffsController', () => {
   });
 
   describe('Integration scenarios', () => {
-    it('should track complex editing session', () => {
+    it('should track complex editing session', async () => {
       // Phase 1: Draw some pixels
       for (let i = 0; i < 10; i++) {
         diffsController.addPixel(i * 3, i * 2, [0, 0, 0, 0], [i * 25, 255 - i * 25, 128, 255]);
@@ -261,7 +261,7 @@ describe('LayerDiffs and LayerDiffsController', () => {
       expect(diffs.hasPendingChanges()).toBe(true);
       expect(diffsController.getPendingPixelCount()).toBeGreaterThan(1000); // Tile fill adds many pixels
 
-      const patch = diffsController.flush();
+      const patch = await diffsController.flush();
 
       expect(patch).toBeDefined();
       expect(patch!.pixels).toBeDefined();

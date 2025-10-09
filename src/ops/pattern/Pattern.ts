@@ -1,5 +1,5 @@
 import { Anvil } from '../../Anvil.js';
-import type { RGBA } from '../../types.js';
+import type { RGBA } from '../../types/types.js';
 
 /**
  * ShapeMask: 既存のビットマスク表現に加えて、行スパン(run)の高速化キャッシュを追加。

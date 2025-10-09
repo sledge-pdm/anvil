@@ -13,4 +13,6 @@ name = "@anvil/wasm"
 crate-type = ["cdylib"]
 
 [dependencies]
-wasm-bindgen = "0.2.100"
+wasm-bindgen = "0.2.104"
+wasm-bindgen-futures = "0.4.54"
+image-webp = "0.2.4"

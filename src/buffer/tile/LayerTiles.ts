@@ -1,5 +1,5 @@
-import type { RGBA, TileBounds, TileIndex, TileInfo } from '../../types.js';
-import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../../types.js';
+import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../../ops/packing/Packing.js';
+import type { RGBA, TileBounds, TileIndex, TileInfo } from '../../types/types.js';
 
 /**
  * Model: Manages tile grid state - dirty flags and uniform colors

@@ -1,5 +1,5 @@
 import { resize } from '../../ops_wasm/pkg/anvil_ops_wasm';
-import { Point, Size } from '../../types';
+import { Point, Size } from '../../types/types';
 
 export function resizeBuffer(
   buffer: Uint8ClampedArray,

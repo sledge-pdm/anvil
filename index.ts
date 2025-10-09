@@ -1,19 +1,25 @@
 // Public API exports for @sledge/anvil
-export type { LayerPatch, PatchMetadata } from './src/patch.js';
-export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types.js';
+export type { PatchMetadata } from './src/types/patch/Patch.js';
+export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types/types.js';
 
 // Core classes
 export { Anvil } from './src/Anvil.js';
 export { PixelBuffer } from './src/buffer/PixelBuffer.js';
 
-// Utility functions
-export { linearToTileIndex, packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from './src/types.js';
-
 // For advanced usage - direct access to components
-export { LayerDiffs } from './src/buffer/diff/LayerDiffs.js';
-export { LayerDiffsController } from './src/buffer/diff/LayerDiffsController.js';
+export { LayerDiffsController } from './src/buffer/LayerDiffsController.js';
 export { LayerTiles } from './src/buffer/tile/LayerTiles.js';
 export { LayerTilesController } from './src/buffer/tile/LayerTilesController.js';
+export {
+  linearToTileIndex,
+  packPending,
+  packedU32ToRgba,
+  rawToWebp,
+  rgbaToPackedU32,
+  tileIndexToLinear,
+  tileKey,
+  webpToRaw,
+} from './src/ops/packing/Packing.js';
 
 // Ops
 export { floodFill } from './src/ops/fill/FloodFill.js';

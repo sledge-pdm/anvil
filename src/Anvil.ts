@@ -1,10 +1,10 @@
+import { LayerDiffsController } from './buffer/LayerDiffsController';
 import { PixelBuffer } from './buffer/PixelBuffer';
-import { LayerDiffs } from './buffer/diff/LayerDiffs';
-import { LayerDiffsController } from './buffer/diff/LayerDiffsController';
 import { LayerTiles } from './buffer/tile/LayerTiles';
 import { LayerTilesController } from './buffer/tile/LayerTilesController';
-import { LayerPatch } from './patch';
-import type { Point, RGBA, Size, TileIndex } from './types';
+import { packedU32ToRgba, rawToWebp, webpToRaw } from './ops/packing/Packing';
+import { PackedDiffs } from './types/patch/Patch';
+import type { Point, RGBA, Size, TileIndex } from './types/types';
 
 /**
  * Anvil - Main facade for pixel-based drawing operations
@@ -28,7 +28,7 @@ export class Anvil {
     // Initialize core components
     this.buffer = new PixelBuffer(width, height);
     this.tilesController = new LayerTilesController(new LayerTiles(width, height, tileSize), this.buffer);
-    this.diffsController = new LayerDiffsController(new LayerDiffs(), this.tilesController, tileSize);
+    this.diffsController = new LayerDiffsController(this.tilesController, tileSize);
   }
 
   // Basic properties
@@ -65,7 +65,7 @@ export class Anvil {
     this.buffer.data.set(buffer);
 
     // Reset all tracking states
-    this.diffsController.clearDiffs();
+    this.diffsController.discardPendingChanges();
     this.tilesController.setAllDirty();
   }
 
@@ -166,10 +166,10 @@ export class Anvil {
       this._batchDirtyTiles?.add(key);
       // uniform チェックはバッチ終端でまとめて再判定するので候補として保持
       this._batchUniformCheckTiles?.add(key);
-      this.diffsController.addPixel(x, y, oldColor, color);
+      this.diffsController.addPixel({ x, y, before: oldColor, after: color });
     } else {
       this.tilesController.markDirtyByPixel(x, y);
-      this.diffsController.addPixel(x, y, oldColor, color);
+      this.diffsController.addPixel({ x, y, before: oldColor, after: color });
       const tileIndex = this.tilesController.pixelToTileIndex(x, y);
       this.checkTileUniformity(tileIndex);
     }
@@ -210,7 +210,7 @@ export class Anvil {
           const oldColor = this.tilesController.getTileInfo(tileIndex).uniformColor || ([0, 0, 0, 0] as RGBA);
 
           this.tilesController.fillTile(tileIndex, color);
-          this.diffsController.addTileFill(tileIndex, oldColor, color);
+          this.diffsController.addTileFill({ tileIndex, before: oldColor, after: color });
         } else {
           // Tile is partially covered - fill individual pixels
           for (let py = Math.max(y, tileStartY); py < Math.min(y + height, tileEndY); py++) {
@@ -233,7 +233,7 @@ export class Anvil {
   }
 
   addPixelDiff(x: number, y: number, before: RGBA, after: RGBA): void {
-    this.diffsController.addPixel(x, y, before, after);
+    this.diffsController.addPixel({ x, y, before, after });
   }
 
   /**
@@ -243,7 +243,7 @@ export class Anvil {
   addPixelDiffs(diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }>): void {
     for (const d of diffs) {
       // diff 登録
-      this.diffsController.addPixel(d.x, d.y, d.before, d.after);
+      this.diffsController.addPixel(d);
       if (this._batchDepth > 0) {
         const tileIndex = this.tilesController.pixelToTileIndex(d.x, d.y);
         const key = tileIndex.row + ',' + tileIndex.col;
@@ -257,8 +257,8 @@ export class Anvil {
     }
   }
 
-  addTileFillDiff(tile: TileIndex, before: RGBA | undefined, after: RGBA): void {
-    this.diffsController.addTileFill(tile, before, after);
+  addTileFillDiff(tileIndex: TileIndex, before: RGBA | undefined, after: RGBA): void {
+    this.diffsController.addTileFill({ tileIndex, before, after });
   }
 
   /**
@@ -266,7 +266,7 @@ export class Anvil {
    * Marks all tiles dirty so renderer can refresh.
    */
   addWholeDiff(swapBuffer: Uint8ClampedArray): void {
-    this.diffsController.addWholeBufferChange(swapBuffer);
+    this.diffsController.addWhole({ swapBuffer, width: this.getWidth(), height: this.getHeight() });
     this.tilesController.setAllDirty();
   }
 
@@ -275,10 +275,8 @@ export class Anvil {
    * Marks tiles overlapping the rectangle as dirty.
    */
   addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray): void {
-    // Delegate to LayerDiffs internal object (need to cast to access)
-    // We extend diffsController via its underlying diffs instance method "addPartialBufferChange".
-    // @ts-ignore internal access
-    this.diffsController.diffs.addPartialBufferChange(boundBox, swapBuffer);
+    // Use the diffsController's new public method
+    this.diffsController.addPartial({ boundBox, swapBuffer });
     // Mark tiles dirty
     const startTileX = Math.floor(boundBox.x / this.tileSize);
     const startTileY = Math.floor(boundBox.y / this.tileSize);
@@ -301,7 +299,7 @@ export class Anvil {
     this.buffer.resize(newSize);
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffsController.clearDiffs();
+    this.diffsController.discardPendingChanges();
   }
 
   resizeWithOffset(
@@ -314,19 +312,15 @@ export class Anvil {
     this.buffer.resize(newSize, options);
     this.tilesController.resize(newSize.width, newSize.height);
     // Note: This would invalidate current diffs, so we clear them
-    this.diffsController.clearDiffs();
+    this.diffsController.discardPendingChanges();
   }
 
-  getPendingPixelCount(): number {
-    return this.diffsController.getPendingPixelCount();
-  }
-
-  previewPatch(): LayerPatch | null {
+  previewPatch(): PackedDiffs | null {
     const patch = this.diffsController.previewPatch();
-    return (patch as LayerPatch) || null;
+    return (patch as PackedDiffs) || null;
   }
 
-  applyPatch(patch: LayerPatch | null, mode: 'undo' | 'redo') {
+  applyPatch(patch: PackedDiffs | null, mode: 'undo' | 'redo') {
     if (!patch) {
       console.warn('applyPatch: patch is null');
       return;
@@ -334,22 +328,21 @@ export class Anvil {
 
     // Whole buffer (swap method)
     if (patch.whole) {
-      // In swap method, we swap the current buffer with the stored buffer
-      const currentBuffer = new Uint8ClampedArray(this.getBufferData());
-      this.replaceBuffer(patch.whole.swapBuffer);
-      // Update the patch to contain the previous buffer for next swap
-      patch.whole.swapBuffer = currentBuffer;
+      const rawBuffer = webpToRaw(patch.whole.swapBufferWebp, this.getWidth(), this.getHeight());
+      const currentBuffer = rawToWebp(new Uint8Array(this.getBufferData().buffer), this.getWidth(), this.getHeight());
+      this.replaceBuffer(new Uint8ClampedArray(rawBuffer.buffer));
+      patch.whole.swapBufferWebp = currentBuffer;
     }
 
     // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
-      const { boundBox, swapBuffer } = patch.partial;
-      // Extract current buffer content from the bounded area
+      const { boundBox, swapBufferWebp } = patch.partial;
+      const rawBuffer = webpToRaw(swapBufferWebp, boundBox.width, boundBox.height);
       const currentPartial = this.getPartialBuffer(boundBox);
-      this.setPartialBuffer(boundBox, swapBuffer);
+      const currentBuffer = rawToWebp(new Uint8Array(currentPartial.buffer), boundBox.width, boundBox.height);
+      this.setPartialBuffer(boundBox, new Uint8ClampedArray(rawBuffer.buffer));
       // Update the patch to contain the previous buffer content for next swap
-      patch.partial.swapBuffer = currentPartial;
-      this.flush();
+      patch.partial.swapBufferWebp = currentBuffer;
     }
 
     // Tile fills
@@ -364,37 +357,26 @@ export class Anvil {
       const b = packed & 0xff;
       const a = (packed >>> 24) & 0xff;
       const tileSize = this.getTileSize();
-      const ox = t.tile.col * tileSize;
-      const oy = t.tile.row * tileSize;
+      const ox = t.tileIndex.col * tileSize;
+      const oy = t.tileIndex.row * tileSize;
       this.fillRect(ox, oy, tileSize, tileSize, [r, g, b, a]);
     });
 
     // Pixels
     patch.pixels?.forEach((p) => {
-      const values = mode === 'undo' ? p.before : p.after;
-      const tileSize = this.getTileSize();
-      const ox = p.tile.col * tileSize;
-      const oy = p.tile.row * tileSize;
-      for (let i = 0; i < p.idx.length; i++) {
-        const local = p.idx[i];
-        const dx = local % tileSize;
-        const dy = (local / tileSize) | 0;
-        const packed = values[i] >>> 0;
-        const r = (packed >> 16) & 0xff;
-        const g = (packed >> 8) & 0xff;
-        const b = packed & 0xff;
-        const a = (packed >>> 24) & 0xff;
-        this.setPixel(ox + dx, oy + dy, [r, g, b, a]);
-      }
+      const color = mode === 'undo' ? p.before : p.after;
+      const colorUnpacked = packedU32ToRgba(color);
+
+      this.setPixel(p.x, p.y, colorUnpacked);
     });
 
     this.flush();
   }
 
-  flush(): LayerPatch | null {
+  flush(): PackedDiffs | null {
     const patch = this.diffsController.flush();
     this.tilesController.clearAllDirty();
-    return (patch as LayerPatch) || null;
+    return (patch as PackedDiffs) || null;
   }
 
   discardPendingChanges(): void {
@@ -466,20 +448,5 @@ export class Anvil {
    */
   clearDirtyTiles(): void {
     this.tilesController.clearAllDirty();
-  }
-
-  // Debug and diagnostics
-  getDebugInfo() {
-    const bufferSize = this.getWidth() * this.getHeight() * 4;
-    const diffsDebug = this.diffsController.getDebugInfo();
-
-    return {
-      width: this.getWidth(),
-      height: this.getHeight(),
-      tileSize: this.tileSize,
-      bufferSize,
-      ...diffsDebug,
-      tileInfo: this.getTileInfo(),
-    };
   }
 }
