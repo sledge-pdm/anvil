@@ -91,8 +91,7 @@ export function packPending(pendingDiffs: PendingDiffs): PackedDiffs {
       packedPixels.push({
         x: px.x,
         y: px.y,
-        before: rgbaToPackedU32(px.before),
-        after: rgbaToPackedU32(px.after),
+        color: rgbaToPackedU32(px.color),
       });
     });
     packed.pixels = packedPixels;

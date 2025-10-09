@@ -9,13 +9,11 @@ import { RGBA } from '../types';
 export interface PixelPatchData {
   x: number;
   y: number;
-  before: RGBA;
-  after: RGBA;
+  color: RGBA;
 }
 
 export interface PackedPixelPatchData {
   x: number;
   y: number;
-  before: number; // packed RGBA32
-  after: number; // packed RGBA32
+  color: number; // packed RGBA32
 }

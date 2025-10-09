@@ -2,7 +2,7 @@ import { LayerDiffsController } from './buffer/LayerDiffsController';
 import { PixelBuffer } from './buffer/PixelBuffer';
 import { LayerTiles } from './buffer/tile/LayerTiles';
 import { LayerTilesController } from './buffer/tile/LayerTilesController';
-import { packedU32ToRgba, rawToWebp, webpToRaw } from './ops/packing/Packing';
+import { packedU32ToRgba, rawToWebp, rgbaToPackedU32, webpToRaw } from './ops/packing/Packing';
 import { PackedDiffs } from './types/patch/Patch';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 
@@ -166,10 +166,10 @@ export class Anvil {
       this._batchDirtyTiles?.add(key);
       // uniform チェックはバッチ終端でまとめて再判定するので候補として保持
       this._batchUniformCheckTiles?.add(key);
-      this.diffsController.addPixel({ x, y, before: oldColor, after: color });
+      this.diffsController.addPixel({ x, y, color: oldColor });
     } else {
       this.tilesController.markDirtyByPixel(x, y);
-      this.diffsController.addPixel({ x, y, before: oldColor, after: color });
+      this.diffsController.addPixel({ x, y, color: oldColor });
       const tileIndex = this.tilesController.pixelToTileIndex(x, y);
       this.checkTileUniformity(tileIndex);
     }
@@ -230,35 +230,6 @@ export class Anvil {
   // Buffer access
   getBufferData(): Uint8ClampedArray {
     return this.buffer.data;
-  }
-
-  addPixelDiff(x: number, y: number, before: RGBA, after: RGBA): void {
-    this.diffsController.addPixel({ x, y, before, after });
-  }
-
-  /**
-   * Bulk pixel diffs 登録用補助。Anvil 外で manualDiff で直接 buffer を書いた後、before/after をまとめて登録。
-   * batch 中でも利用可能。
-   */
-  addPixelDiffs(diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }>): void {
-    for (const d of diffs) {
-      // diff 登録
-      this.diffsController.addPixel(d);
-      if (this._batchDepth > 0) {
-        const tileIndex = this.tilesController.pixelToTileIndex(d.x, d.y);
-        const key = tileIndex.row + ',' + tileIndex.col;
-        this._batchDirtyTiles?.add(key);
-        this._batchUniformCheckTiles?.add(key);
-      } else {
-        this.tilesController.markDirtyByPixel(d.x, d.y);
-        const tileIndex = this.tilesController.pixelToTileIndex(d.x, d.y);
-        this.checkTileUniformity(tileIndex);
-      }
-    }
-  }
-
-  addTileFillDiff(tileIndex: TileIndex, before: RGBA | undefined, after: RGBA): void {
-    this.diffsController.addTileFill({ tileIndex, before, after });
   }
 
   /**
@@ -363,11 +334,12 @@ export class Anvil {
     });
 
     // Pixels
-    patch.pixels?.forEach((p) => {
-      const color = mode === 'undo' ? p.before : p.after;
-      const colorUnpacked = packedU32ToRgba(color);
+    patch.pixels = patch.pixels?.map((p) => {
+      const colorUnpacked = packedU32ToRgba(p.color);
 
+      const swapColor = this.getPixel(p.x, p.y);
       this.setPixel(p.x, p.y, colorUnpacked);
+      return { x: p.x, y: p.y, color: rgbaToPackedU32(swapColor) };
     });
 
     this.flush();

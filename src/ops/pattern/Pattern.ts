@@ -1,4 +1,5 @@
 import { Anvil } from '../../Anvil.js';
+import { PixelPatchData } from '../../types/patch/pixel.js';
 import type { RGBA } from '../../types/types.js';
 
 /**
@@ -35,7 +36,7 @@ interface PutShapeOptions {
    * (L2 部分最適化) ラインストローク中に共有される diff 集約マップ。
    * 既に同一ピクセルが登録済みなら再度 before 取得や書き込みをスキップ可能。
    */
-  pixelAcc?: Map<string, { x: number; y: number; before: RGBA; after: RGBA }>;
+  pixelAcc?: Map<string, PixelPatchData>;
 }
 
 /**
@@ -77,7 +78,7 @@ export function putShape(opts: PutShapeOptions) {
   const tlY = posY + offsetY;
   const target = anvil.getBufferData();
 
-  const diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }> | undefined = manualDiff ? [] : undefined;
+  const diffs: PixelPatchData[] | undefined = manualDiff ? [] : undefined;
 
   for (const row of spans) {
     const ty = tlY + row.y;
@@ -104,7 +105,7 @@ export function putShape(opts: PutShapeOptions) {
           target[ti + 1] = color[1];
           target[ti + 2] = color[2];
           target[ti + 3] = color[3];
-          const diff = { x: tx, y: ty, before, after: color };
+          const diff = { x: tx, y: ty, color: before };
           diffs!.push(diff);
           if (pixelAcc) pixelAcc.set(key, diff);
         } else {
@@ -122,7 +123,7 @@ interface PutShapeLineOptions extends PutShapeOptions {
   fromPosY: number;
 }
 
-export function putShapeLine(opts: PutShapeLineOptions) {
+export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | undefined {
   const { fromPosX, fromPosY, posX, posY, manualDiff } = opts;
 
   // 単一点なら従来処理
@@ -205,8 +206,8 @@ export function putShapeLine(opts: PutShapeLineOptions) {
   const stampingCostEst = centers.length * spans.length; // 粗い指標
   if (area > MAX_COMPOSITE_AREA || (area < stampingCostEst * 4 && !manualDiff)) {
     // フォールバック: 既存 stamping 方式
-    let fallbackDiffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }> | undefined;
-    const diffMap: Map<string, { x: number; y: number; before: RGBA; after: RGBA }> = manualDiff ? new Map() : new Map();
+    let fallbackDiffs: Array<PixelPatchData> | undefined;
+    const diffMap: Map<string, PixelPatchData> = manualDiff ? new Map() : new Map();
     for (const c of centers) {
       if (manualDiff) {
         putShape({ ...opts, posX: c.x, posY: c.y, manualDiff: true, pixelAcc: diffMap });
@@ -248,7 +249,7 @@ export function putShapeLine(opts: PutShapeLineOptions) {
   }
 
   // 4. マスク適用
-  let diffs: Array<{ x: number; y: number; before: RGBA; after: RGBA }> | undefined = manualDiff ? [] : undefined;
+  let diffs: PixelPatchData[] | undefined = manualDiff ? [] : undefined;
   const buf = opts.anvil.getBufferData();
   const color = opts.color;
   const filter = opts.filter;
@@ -268,7 +269,7 @@ export function putShapeLine(opts: PutShapeLineOptions) {
         buf[ti + 1] = color[1];
         buf[ti + 2] = color[2];
         buf[ti + 3] = color[3];
-        diffs!.push({ x: gx, y: gy, before, after: color });
+        diffs!.push({ x: gx, y: gy, color: before });
       } else {
         opts.anvil.setPixel(gx, gy, color);
       }
