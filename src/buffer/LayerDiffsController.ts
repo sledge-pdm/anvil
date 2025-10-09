@@ -6,10 +6,6 @@ import { TileFillPatchData } from '../types/patch/tileFill.js';
 import { WholePatchData } from '../types/patch/whole.js';
 import { LayerTilesController } from './tile/LayerTilesController.js';
 
-/**
- * Controller: High-level diff operations and patch generation
- * Responsible for: business logic, patch creation, coordinate translation
- */
 export class LayerDiffsController {
   diffs: PendingDiffs = {
     pixels: [],
