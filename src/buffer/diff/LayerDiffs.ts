@@ -25,17 +25,15 @@ export class LayerDiffs {
     }
   > = new Map();
 
-  // Partial buffer replacements (Rect)
+  // Partial buffer replacements (Rect) - swap method
   private partialBufferChange?: {
     boundBox: { x: number; y: number; width: number; height: number };
-    before: Uint8ClampedArray; // should be boundBox.width * boundBox.height * 4
-    after: Uint8ClampedArray; // should be boundBox.width * boundBox.height * 4
+    swapBuffer: Uint8ClampedArray; // replacement data, should be boundBox.width * boundBox.height * 4
   };
 
-  // Whole buffer replacements (rare, for canvas resize etc)
+  // Whole buffer replacements (rare, for canvas resize etc) - swap method
   private wholeBufferChange?: {
-    before: Uint8ClampedArray;
-    after: Uint8ClampedArray;
+    swapBuffer: Uint8ClampedArray;
   };
 
   getDiffs() {
@@ -84,12 +82,26 @@ export class LayerDiffs {
   }
 
   /**
-   * Add a whole buffer replacement
+   * Register a partial (rectangular) buffer change (swap method).
    */
-  addWholeBufferChange(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
+  addPartialBufferChange(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray) {
+    const expected = boundBox.width * boundBox.height * 4;
+    if (swapBuffer.length !== expected) throw new Error(`partial buffer length ${swapBuffer.length} does not match bbox area * 4 = ${expected}`);
+    this.partialBufferChange = {
+      boundBox: { ...boundBox },
+      swapBuffer,
+    };
+    // Clear fine-grained diffs (they are superseded)
+    this.pixelDiffs.clear();
+    this.tileFills.clear();
+  }
+
+  /**
+   * Add a whole buffer replacement (swap method)
+   */
+  addWholeBufferChange(swapBuffer: Uint8ClampedArray): void {
     this.wholeBufferChange = {
-      before: new Uint8ClampedArray(before),
-      after: new Uint8ClampedArray(after),
+      swapBuffer,
     };
 
     // Clear all other changes (whole buffer overrides everything)
@@ -110,7 +122,7 @@ export class LayerDiffs {
    */
   getPendingPixelCount(): number {
     if (this.wholeBufferChange) {
-      return this.wholeBufferChange.after.length / 4;
+      return this.wholeBufferChange.swapBuffer.length / 4;
     }
 
     let count = 0;
@@ -130,8 +142,8 @@ export class LayerDiffs {
    * Get the accumulated changes without clearing them
    */
   getPendingChanges(): {
-    wholeBuffer?: { before: Uint8ClampedArray; after: Uint8ClampedArray };
-    partialBuffer?: { boundBox: { x: number; y: number; width: number; height: number }; before: Uint8ClampedArray; after: Uint8ClampedArray };
+    wholeBuffer?: { swapBuffer: Uint8ClampedArray };
+    partialBuffer?: { boundBox: { x: number; y: number; width: number; height: number }; swapBuffer: Uint8ClampedArray };
     tileFills: Array<{ tile: TileIndex; before?: number; after: number }>;
     pixelChanges: Array<{
       tile: TileIndex;
@@ -165,8 +177,7 @@ export class LayerDiffs {
       wholeBuffer: this.wholeBufferChange,
       partialBuffer: this.partialBufferChange && {
         boundBox: this.partialBufferChange.boundBox,
-        before: this.partialBufferChange.before,
-        after: this.partialBufferChange.after,
+        swapBuffer: this.partialBufferChange.swapBuffer,
       },
       tileFills,
       pixelChanges,
@@ -204,16 +215,14 @@ export class LayerDiffs {
   getMemoryUsage(): number {
     let bytes = 0;
 
-    // Whole buffer changes
+    // Whole buffer changes (swap method - only one buffer stored)
     if (this.wholeBufferChange) {
-      bytes += this.wholeBufferChange.before.byteLength;
-      bytes += this.wholeBufferChange.after.byteLength;
+      bytes += this.wholeBufferChange.swapBuffer.byteLength;
     }
 
-    // Partial buffer change
+    // Partial buffer change (swap method - only one buffer stored)
     if (this.partialBufferChange) {
-      bytes += this.partialBufferChange.before.byteLength;
-      bytes += this.partialBufferChange.after.byteLength;
+      bytes += this.partialBufferChange.swapBuffer.byteLength;
     }
 
     // Tile fills (approximately 32 bytes per entry)
@@ -225,23 +234,5 @@ export class LayerDiffs {
     }
 
     return bytes;
-  }
-
-  /**
-   * Register a partial (rectangular) buffer change. Overrides pixel/tile diffs inside its bounds.
-   * Existing pixel/tile diffs are cleared because partial patch replaces them for efficiency.
-   */
-  addPartialBufferChange(boundBox: { x: number; y: number; width: number; height: number }, before: Uint8ClampedArray, after: Uint8ClampedArray) {
-    if (before.length !== after.length) throw new Error('partial buffer before/after length mismatch');
-    const expected = boundBox.width * boundBox.height * 4;
-    if (before.length !== expected) throw new Error(`partial buffer length ${before.length} does not match bbox area * 4 = ${expected}`);
-    this.partialBufferChange = {
-      boundBox: { ...boundBox },
-      before: new Uint8ClampedArray(before),
-      after: new Uint8ClampedArray(after),
-    };
-    // Clear fine-grained diffs (they are superseded)
-    this.pixelDiffs.clear();
-    this.tileFills.clear();
   }
 }

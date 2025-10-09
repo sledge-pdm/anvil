@@ -37,10 +37,10 @@ export class LayerDiffsController {
   }
 
   /**
-   * Add whole buffer replacement
+   * Add whole buffer replacement (swap method)
    */
-  addWholeBufferChange(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
-    this.diffs.addWholeBufferChange(before, after);
+  addWholeBufferChange(swapBuffer: Uint8ClampedArray): void {
+    this.diffs.addWholeBufferChange(swapBuffer);
   }
 
   /**

@@ -99,6 +99,39 @@ export class Anvil {
     }
   }
 
+  getPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }): Uint8ClampedArray {
+    const { x, y, width: w, height: h } = boundBox;
+    const result = new Uint8ClampedArray(w * h * 4);
+
+    if (w > 0 && h > 0) {
+      const buf = this.getBufferData();
+      if (buf) {
+        for (let row = 0; row < h; row++) {
+          const sy = y + row;
+          if (sy < 0 || sy >= this.getHeight()) continue;
+          const dstOffset = row * w * 4;
+          const srcOffset = (sy * this.getWidth() + x) * 4;
+          // Clamp horizontal copy within layer bounds
+          let copyW = w;
+          let srcXOffset = 0;
+          if (x < 0) {
+            // shift destination start
+            const shift = -x;
+            srcXOffset = shift * 4;
+            copyW -= shift;
+          }
+          if (x + copyW > this.getWidth()) {
+            copyW = this.getWidth() - x;
+          }
+          if (copyW <= 0) continue;
+          result.set(buf.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
+        }
+      }
+    }
+
+    return result;
+  }
+
   /**
    * Get the current buffer data
    * @returns Copy of the current pixel buffer
@@ -229,24 +262,23 @@ export class Anvil {
   }
 
   /**
-   * Register a whole-buffer change (before/after) into diff tracking.
+   * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
    */
-  addWholeDiff(before: Uint8ClampedArray, after: Uint8ClampedArray): void {
-    if (before.length !== after.length) throw new Error('addWholeBufferChange: length mismatch');
-    this.diffsController.addWholeBufferChange(before, after);
+  addWholeDiff(swapBuffer: Uint8ClampedArray): void {
+    this.diffsController.addWholeBufferChange(swapBuffer);
     this.tilesController.setAllDirty();
   }
 
   /**
-   * Register a partial rectangular diff. Caller provides before/after sub-buffer.
+   * Register a partial rectangular diff (swap method). Caller provides replacement buffer.
    * Marks tiles overlapping the rectangle as dirty.
    */
-  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, before: Uint8ClampedArray, after: Uint8ClampedArray): void {
+  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray): void {
     // Delegate to LayerDiffs internal object (need to cast to access)
     // We extend diffsController via its underlying diffs instance method "addPartialBufferChange".
     // @ts-ignore internal access
-    this.diffsController.diffs.addPartialBufferChange(boundBox, before, after);
+    this.diffsController.diffs.addPartialBufferChange(boundBox, swapBuffer);
     // Mark tiles dirty
     const startTileX = Math.floor(boundBox.x / this.tileSize);
     const startTileY = Math.floor(boundBox.y / this.tileSize);
@@ -294,18 +326,29 @@ export class Anvil {
     return (patch as LayerPatch) || null;
   }
 
-  applyPatch(patch: LayerPatch, mode: 'undo' | 'redo') {
-    // Whole buffer
-    if (patch.whole) {
-      const target = mode === 'undo' ? patch.whole.before : patch.whole.after;
-      this.replaceBuffer(target);
+  applyPatch(patch: LayerPatch | null, mode: 'undo' | 'redo') {
+    if (!patch) {
+      console.warn('applyPatch: patch is null');
+      return;
     }
 
-    // Partial rectangle (applies after whole, before tiles/pixels)
+    // Whole buffer (swap method)
+    if (patch.whole) {
+      // In swap method, we swap the current buffer with the stored buffer
+      const currentBuffer = new Uint8ClampedArray(this.getBufferData());
+      this.replaceBuffer(patch.whole.swapBuffer);
+      // Update the patch to contain the previous buffer for next swap
+      patch.whole.swapBuffer = currentBuffer;
+    }
+
+    // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
-      const { boundBox, before, after } = patch.partial;
-      const target = mode === 'undo' ? before : after;
-      this.setPartialBuffer(boundBox, target);
+      const { boundBox, swapBuffer } = patch.partial;
+      // Extract current buffer content from the bounded area
+      const currentPartial = this.getPartialBuffer(boundBox);
+      this.setPartialBuffer(boundBox, swapBuffer);
+      // Update the patch to contain the previous buffer content for next swap
+      patch.partial.swapBuffer = currentPartial;
       this.flush();
     }
 

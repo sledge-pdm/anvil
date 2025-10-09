@@ -63,14 +63,13 @@ describe('LayerDiffs and LayerDiffsController', () => {
       oldBuffer.fill(100);
       newBuffer.fill(200);
 
-      diffs.addWholeBufferChange(oldBuffer, newBuffer);
+      diffs.addWholeBufferChange(newBuffer);
 
       expect(diffs.hasPendingChanges()).toBe(true);
 
       const pending = diffs.getPendingChanges();
       expect(pending.wholeBuffer).toBeDefined();
-      expect(pending.wholeBuffer!.before).toEqual(oldBuffer);
-      expect(pending.wholeBuffer!.after).toEqual(newBuffer);
+      expect(pending.wholeBuffer!.swapBuffer).toEqual(newBuffer);
     });
 
     it('should clear all changes', () => {
@@ -214,7 +213,7 @@ describe('LayerDiffs and LayerDiffsController', () => {
       oldBufferData.fill(128);
       newBufferData.fill(255);
 
-      diffsController.addWholeBufferChange(oldBufferData, newBufferData);
+      diffsController.addWholeBufferChange(newBufferData);
 
       expect(diffs.hasPendingChanges()).toBe(true);
 

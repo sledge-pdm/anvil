@@ -18,16 +18,16 @@ export interface LayerPatch {
   }>;
 
   // Partial rectangular buffer replacement (sub-rectangle of layer)
+  // Uses swap method: only stores the replacement data, current buffer becomes "before"
   partial?: {
     boundBox: { x: number; y: number; width: number; height: number };
-    before: Uint8ClampedArray; // length = w*h*4
-    after: Uint8ClampedArray; // length = w*h*4
+    swapBuffer: Uint8ClampedArray; // replacement data, length = w*h*4
   };
 
   // Whole buffer replacement (for large changes like canvas resize)
+  // Uses swap method: only stores the replacement buffer, current buffer becomes "before"
   whole?: {
-    before: Uint8ClampedArray;
-    after: Uint8ClampedArray;
+    swapBuffer: Uint8ClampedArray;
   };
 }
 
