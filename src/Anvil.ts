@@ -334,7 +334,7 @@ export class Anvil {
 
   flushDiffs(): PackedDiffs | null {
     const patch = this.diffsController.flush();
-    return (patch as PackedDiffs) || null;
+    return patch || null;
   }
 
   discardDiffs(): void {

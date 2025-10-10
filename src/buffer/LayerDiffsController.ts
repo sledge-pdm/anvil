@@ -54,12 +54,8 @@ export class LayerDiffsController {
     if (!this.hasPendingChanges()) {
       return undefined;
     }
-
     const patch: PackedDiffs = packPending(this.diffs);
-
-    // Clear accumulated changes
     this.discard();
-
     return patch;
   }
 
