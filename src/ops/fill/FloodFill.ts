@@ -12,13 +12,15 @@ export function floodFill(args: {
   startY: number;
   fillColor: [number, number, number, number];
   threshold?: number;
-  maskBuffer?: Uint8Array;
-  maskMode?: 'inside' | 'outside' | 'none';
+  mask?: {
+    buffer: Uint8Array; // layer size
+    mode: 'inside' | 'outside' | 'none';
+  };
 }): boolean {
-  const { target, targetWidth, targetHeight, startX, startY, fillColor, threshold, maskBuffer, maskMode } = args;
+  const { target, targetWidth, targetHeight, startX, startY, fillColor, threshold, mask } = args;
 
-  if (maskBuffer) {
-    // does breaking change
+  if (mask) {
+    const { buffer, mode } = mask;
     const result = scanline_flood_fill_with_mask(
       new Uint8Array(target.buffer, target.byteOffset, target.byteLength),
       targetWidth,
@@ -30,8 +32,8 @@ export function floodFill(args: {
       fillColor[2],
       fillColor[3],
       threshold ?? 0,
-      maskBuffer,
-      maskMode ?? 'inside'
+      buffer,
+      mode
     );
 
     return result;
