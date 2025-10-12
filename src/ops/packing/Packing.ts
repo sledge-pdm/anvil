@@ -7,7 +7,10 @@ export function rawToWebp(buffer: Uint8Array, width: number, height: number): Ui
   const webpBuffer = raw_to_webp(buffer, width, height);
   const end = performance.now();
 
-  console.log(`rawToWebp: ${end - start}ms, size: ${buffer.length} > ${webpBuffer.length} bytes`);
+  const compressed = (webpBuffer.length / buffer.length) * 100;
+  console.log(
+    `rawToWebp: ${end - start}ms, size: ${buffer.length} > ${webpBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
+  );
 
   return webpBuffer;
 }
@@ -17,7 +20,10 @@ export function webpToRaw(buffer: Uint8Array, width: number, height: number): Ui
   const rawBuffer = webp_to_raw(buffer, width, height);
   const end = performance.now();
 
-  console.log(`webpToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes`);
+  const compressed = (buffer.length / rawBuffer.length) * 100;
+  console.log(
+    `webpToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
+  );
 
   return rawBuffer;
 }
