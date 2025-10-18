@@ -1,4 +1,4 @@
-import { raw_to_webp, webp_to_raw } from '../../ops_wasm/pkg/anvil_ops_wasm';
+import { png_to_raw, raw_to_png, raw_to_webp, webp_to_raw } from '../../ops_wasm/pkg/anvil_ops_wasm';
 import { PackedDiffs, PendingDiffs } from '../../types/patch/Patch';
 import { RGBA, TileIndex } from '../../types/types';
 
@@ -23,6 +23,32 @@ export function webpToRaw(buffer: Uint8Array, width: number, height: number): Ui
   const compressed = (buffer.length / rawBuffer.length) * 100;
   console.log(
     `webpToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
+  );
+
+  return rawBuffer;
+}
+
+export function rawToPng(buffer: Uint8Array, width: number, height: number): Uint8Array {
+  const start = performance.now();
+  const pngBuffer = raw_to_png(buffer, width, height);
+  const end = performance.now();
+
+  const compressed = (pngBuffer.length / buffer.length) * 100;
+  console.log(
+    `rawToPng: ${end - start}ms, size: ${buffer.length} > ${pngBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
+  );
+
+  return pngBuffer;
+}
+
+export function pngToRaw(buffer: Uint8Array, width: number, height: number): Uint8Array {
+  const start = performance.now();
+  const rawBuffer = png_to_raw(buffer, width, height);
+  const end = performance.now();
+
+  const compressed = (buffer.length / rawBuffer.length) * 100;
+  console.log(
+    `pngToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
   );
 
   return rawBuffer;

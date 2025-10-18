@@ -13,6 +13,8 @@ export {
   linearToTileIndex,
   packPending,
   packedU32ToRgba,
+  pngToRaw,
+  rawToPng,
   rawToWebp,
   rgbaToPackedU32,
   tileIndexToLinear,
