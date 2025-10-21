@@ -1,10 +1,16 @@
 import { png_to_raw, raw_to_png, raw_to_webp, webp_to_raw } from '../../ops_wasm/pkg/anvil_ops_wasm';
+import { PackedPartialPatchData, PartialPatchData } from '../../types/patch/partial';
 import { PackedDiffs, PendingDiffs } from '../../types/patch/Patch';
+import { PackedPixelPatchData, PixelPatchData } from '../../types/patch/pixel';
+import { PackedTileFillPatchData, TileFillPatchData } from '../../types/patch/tileFill';
+import { PackedWholePatchData, WholePatchData } from '../../types/patch/whole';
 import { RGBA, TileIndex } from '../../types/types';
 
-export function rawToWebp(buffer: Uint8Array, width: number, height: number): Uint8Array {
+export function rawToWebp(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): Uint8Array {
   const start = performance.now();
-  const webpBuffer = raw_to_webp(buffer, width, height);
+  // Uint8ClampedArrayの場合は、同じArrayBufferを参照するUint8Arrayビューを作成
+  const uint8Buffer = buffer instanceof Uint8ClampedArray ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) : buffer;
+  const webpBuffer = raw_to_webp(uint8Buffer, width, height);
   const end = performance.now();
 
   const compressed = (webpBuffer.length / buffer.length) * 100;
@@ -78,49 +84,64 @@ export function linearToTileIndex(linear: number, cols: number): TileIndex {
   };
 }
 
+export function packPixels(diffs: PixelPatchData[]): PackedPixelPatchData[] {
+  return diffs.map((px) => {
+    return {
+      x: px.x,
+      y: px.y,
+      color: rgbaToPackedU32(px.color),
+    };
+  });
+}
+
+export function packTiles(diffs: Map<string, TileFillPatchData>): PackedTileFillPatchData[] {
+  return Object.values(diffs).map((tf) => {
+    return {
+      tileIndex: tf.tileIndex,
+      before: tf.before && rgbaToPackedU32(tf.before),
+      after: rgbaToPackedU32(tf.after),
+    };
+  });
+}
+
+export function packWhole(diff: WholePatchData): PackedWholePatchData {
+  const { swapBuffer, width, height } = diff;
+  const webpBuffer = rawToWebp(swapBuffer, width, height);
+  return {
+    swapBufferWebp: webpBuffer,
+    width,
+    height,
+  };
+}
+
+export function packPartial(diff: PartialPatchData): PackedPartialPatchData {
+  const { boundBox, swapBuffer } = diff;
+  const webpBuffer = rawToWebp(swapBuffer, boundBox.width, boundBox.height);
+
+  return {
+    boundBox,
+    swapBufferWebp: webpBuffer,
+  };
+}
+
 export function packPending(pendingDiffs: PendingDiffs): PackedDiffs {
-  const packed: PackedDiffs = {}; // Whole buffer changes - convert to WebP
+  const packed: PackedDiffs = {};
+
   if (pendingDiffs.whole) {
-    const { swapBuffer, width, height } = pendingDiffs.whole;
-    const webpBuffer = rawToWebp(new Uint8Array(swapBuffer.buffer, swapBuffer.byteOffset, swapBuffer.byteLength), width, height);
-    packed.whole = {
-      swapBufferWebp: webpBuffer,
-      width,
-      height,
-    };
+    packed.whole = pendingDiffs.whole;
   }
-
-  // Partial buffer change - convert to WebP
   if (pendingDiffs.partial) {
-    const { boundBox, swapBuffer } = pendingDiffs.partial;
-    const webpBuffer = rawToWebp(new Uint8Array(swapBuffer.buffer, swapBuffer.byteOffset, swapBuffer.byteLength), boundBox.width, boundBox.height);
-
-    packed.partial = {
-      boundBox,
-      swapBufferWebp: webpBuffer,
-    };
+    packed.partial = pendingDiffs.partial;
   }
 
   // Tile fills
   if (pendingDiffs.tileFills.size > 0) {
-    packed.tiles = Object.values(pendingDiffs.tileFills).map((tf) => {
-      return {
-        tileIndex: tf.tileIndex,
-        before: tf.before && rgbaToPackedU32(tf.before),
-        after: rgbaToPackedU32(tf.after),
-      };
-    });
+    packed.tiles = packTiles(pendingDiffs.tileFills);
   }
 
   // Pixel changes - convert to the Patch format
   if (pendingDiffs.pixels.length > 0) {
-    packed.pixels = pendingDiffs.pixels.map((px) => {
-      return {
-        x: px.x,
-        y: px.y,
-        color: rgbaToPackedU32(px.color),
-      };
-    });
+    packed.pixels = packPixels(pendingDiffs.pixels);
   }
 
   return packed;

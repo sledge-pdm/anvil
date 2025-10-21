@@ -1,4 +1,4 @@
-import { packPending, tileKey } from '../ops/packing/Packing.js';
+import { packPartial, packPending, packWhole, tileKey } from '../ops/packing/Packing.js';
 import { PartialPatchData } from '../types/patch/partial.js';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';
@@ -27,14 +27,16 @@ export class LayerDiffsController {
   addPartial(unpacked: PartialPatchData) {
     const { boundBox, swapBuffer } = unpacked;
     const expected = boundBox.width * boundBox.height * 4;
-    if (swapBuffer.length !== expected) throw new Error(`partial buffer length ${swapBuffer.length} does not match bbox area * 4 = ${expected}`);
-    this.diffs.partial = unpacked;
+    if (swapBuffer.byteLength !== expected)
+      throw new Error(`partial buffer length ${swapBuffer.byteLength} does not match bbox area * 4 = ${expected}`);
+
+    this.diffs.partial = packPartial(unpacked);
     this.diffs.pixels = [];
     this.diffs.tileFills.clear();
   }
 
   addWhole(unpacked: WholePatchData) {
-    this.diffs.whole = unpacked;
+    this.diffs.whole = packWhole(unpacked);
     this.diffs.partial = undefined;
     this.diffs.pixels = [];
     this.diffs.tileFills.clear();

@@ -7,7 +7,7 @@
 export interface WholePatchData {
   width: number;
   height: number;
-  swapBuffer: Uint8ClampedArray;
+  swapBuffer: Uint8ClampedArray<ArrayBufferLike>;
 }
 
 export interface PackedWholePatchData {

@@ -6,7 +6,7 @@
 
 export interface PartialPatchData {
   boundBox: { x: number; y: number; width: number; height: number };
-  swapBuffer: Uint8ClampedArray;
+  swapBuffer: Uint8ClampedArray<ArrayBufferLike>;
 }
 
 export interface PackedPartialPatchData {

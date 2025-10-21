@@ -1,15 +1,15 @@
-import { PackedPartialPatchData, PartialPatchData } from './partial.js';
+import { PackedPartialPatchData } from './partial.js';
 import { PackedPixelPatchData, PixelPatchData } from './pixel.js';
 import { PackedTileFillPatchData, TileFillPatchData } from './tileFill.js';
-import { PackedWholePatchData, WholePatchData } from './whole.js';
+import { PackedWholePatchData } from './whole.js';
 
 export type PatchType = 'pixel' | 'tile' | 'partial' | 'whole';
 
 export interface PendingDiffs {
   pixels: PixelPatchData[];
-  tileFills: Map<string, TileFillPatchData>; // key=tileKey
-  partial?: PartialPatchData;
-  whole?: WholePatchData;
+  tileFills: Map<string, TileFillPatchData>;
+  partial?: PackedPartialPatchData;
+  whole?: PackedWholePatchData;
 }
 
 export interface PackedDiffs {

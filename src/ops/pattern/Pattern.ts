@@ -76,7 +76,7 @@ export function putShape(opts: PutShapeOptions) {
   const targetHeight = anvil.getHeight();
   const tlX = posX + offsetX;
   const tlY = posY + offsetY;
-  const target = anvil.getBufferData();
+  const target = anvil.getBufferPointer();
 
   const diffs: PixelPatchData[] | undefined = manualDiff ? [] : undefined;
 
@@ -251,7 +251,7 @@ export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | unde
 
   // 4. マスク適用
   let diffs: PixelPatchData[] | undefined = manualDiff ? [] : undefined;
-  const buf = opts.anvil.getBufferData();
+  const buf = opts.anvil.getBufferPointer();
   const color = opts.color;
   const filter = opts.filter;
   const canvasW = targetW;

@@ -68,7 +68,7 @@ export class Anvil {
     const { x, y, width: w, height: h } = boundBox;
 
     if (w > 0 && h > 0) {
-      const buf = this.getBufferData();
+      const buf = this.getBufferPointer();
       if (buf) {
         for (let row = 0; row < h; row++) {
           const sy = y + row;
@@ -99,7 +99,7 @@ export class Anvil {
     const result = new Uint8ClampedArray(w * h * 4);
 
     if (w > 0 && h > 0) {
-      const buf = this.getBufferData();
+      const buf = this.getBufferPointer();
       if (buf) {
         for (let row = 0; row < h; row++) {
           const sy = y + row;
@@ -128,11 +128,15 @@ export class Anvil {
   }
 
   /**
-   * Get the current buffer data
-   * @returns Copy of the current pixel buffer
+   * Get the current buffer data (copy for safety)
+   * @returns Copy of the current pixel buffer for safe external use
    */
-  getImageData(): Uint8ClampedArray {
+  getBufferCopy(): Uint8ClampedArray {
     return new Uint8ClampedArray(this.buffer.data);
+  }
+  // Buffer access
+  getBufferPointer(): Uint8ClampedArray {
+    return this.buffer.data;
   }
 
   getTileSize(): number {
@@ -216,21 +220,20 @@ export class Anvil {
     this.fillRect(0, 0, this.getWidth(), this.getHeight(), color);
   }
 
-  // Buffer access
-  getBufferData(): Uint8ClampedArray {
-    return this.buffer.data;
-  }
-
   /**
    * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
    */
-  addWholeDiff(swapBuffer: Uint8ClampedArray): void {
+  addWholeDiff(swapBuffer: Uint8ClampedArray<ArrayBufferLike>): void {
     this.diffsController.addWhole({ swapBuffer, width: this.getWidth(), height: this.getHeight() });
     this.tilesController.setAllDirty();
   }
 
-  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: Uint8ClampedArray, setDirty?: boolean): void {
+  addPartialDiff(
+    boundBox: { x: number; y: number; width: number; height: number },
+    swapBuffer: Uint8ClampedArray<ArrayBufferLike>,
+    setDirty?: boolean
+  ): void {
     this.diffsController.addPartial({ boundBox, swapBuffer });
 
     if (setDirty) {
@@ -287,7 +290,9 @@ export class Anvil {
     // Whole buffer (swap method)
     if (patch.whole) {
       const rawBuffer = webpToRaw(patch.whole.swapBufferWebp, this.getWidth(), this.getHeight());
-      const currentBuffer = rawToWebp(new Uint8Array(this.getBufferData().buffer), this.getWidth(), this.getHeight());
+      const bufferData = this.getBufferPointer();
+      // 参照渡しでUint8Arrayビューを作成（コピーなし）
+      const currentBuffer = rawToWebp(bufferData, this.getWidth(), this.getHeight());
       this.replaceBuffer(new Uint8ClampedArray(rawBuffer.buffer));
       patch.whole.swapBufferWebp = currentBuffer;
     }
@@ -297,7 +302,8 @@ export class Anvil {
       const { boundBox, swapBufferWebp } = patch.partial;
       const rawBuffer = webpToRaw(swapBufferWebp, boundBox.width, boundBox.height);
       const currentPartial = this.getPartialBuffer(boundBox);
-      const currentBuffer = rawToWebp(new Uint8Array(currentPartial.buffer), boundBox.width, boundBox.height);
+      // 参照渡しでWebPエンコード（コピーなし）
+      const currentBuffer = rawToWebp(currentPartial, boundBox.width, boundBox.height);
       this.setPartialBuffer(boundBox, new Uint8ClampedArray(rawBuffer.buffer));
       // Update the patch to contain the previous buffer content for next swap
       patch.partial.swapBufferWebp = currentBuffer;
