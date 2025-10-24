@@ -24,7 +24,7 @@ interface ShapeSpanRow {
   spans: Array<{ start: number; end: number }>;
 }
 
-interface PutShapeOptions {
+export interface PutShapeOptions {
   anvil: Anvil;
   shape: ShapeMask;
   posX: number; // centerX
@@ -119,7 +119,7 @@ export function putShape(opts: PutShapeOptions) {
   return diffs;
 }
 
-interface PutShapeLineOptions extends PutShapeOptions {
+export interface PutShapeLineOptions extends PutShapeOptions {
   fromPosX: number;
   fromPosY: number;
 }
