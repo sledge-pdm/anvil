@@ -18,6 +18,27 @@ function getArrayU8FromWasm0(ptr, len) {
     return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 }
 
+let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+
+cachedTextDecoder.decode();
+
+const MAX_SAFARI_DECODE_BYTES = 2146435072;
+let numBytesDecoded = 0;
+function decodeText(ptr, len) {
+    numBytesDecoded += len;
+    if (numBytesDecoded >= MAX_SAFARI_DECODE_BYTES) {
+        cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+        cachedTextDecoder.decode();
+        numBytesDecoded = len;
+    }
+    return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
+}
+
+function getStringFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return decodeText(ptr, len);
+}
+
 let WASM_VECTOR_LEN = 0;
 
 function passArray8ToWasm0(arg, malloc) {
@@ -132,49 +153,6 @@ export function scanline_flood_fill_with_mask(buffer, width, height, start_x, st
 }
 
 /**
- * @param {Uint8Array} target
- * @param {number} target_width
- * @param {number} target_height
- * @param {Uint8Array} patch
- * @param {number} patch_width
- * @param {number} patch_height
- * @param {number} offset_x
- * @param {number} offset_y
- * @returns {Uint8Array}
- */
-export function patch_buffer_rgba(target, target_width, target_height, patch, patch_width, patch_height, offset_x, offset_y) {
-    const ptr0 = passArray8ToWasm0(target, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passArray8ToWasm0(patch, wasm.__wbindgen_malloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.patch_buffer_rgba(ptr0, len0, target_width, target_height, ptr1, len1, patch_width, patch_height, offset_x, offset_y);
-    var v3 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v3;
-}
-
-/**
- * @param {Uint8Array} target
- * @param {number} target_width
- * @param {number} target_height
- * @param {Uint8Array} patch
- * @param {number} patch_width
- * @param {number} patch_height
- * @param {number} offset_x
- * @param {number} offset_y
- * @param {number} scale_x
- * @param {number} scale_y
- * @param {number} rotate_deg
- */
-export function patch_buffer_rgba_instant(target, target_width, target_height, patch, patch_width, patch_height, offset_x, offset_y, scale_x, scale_y, rotate_deg) {
-    var ptr0 = passArray8ToWasm0(target, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    const ptr1 = passArray8ToWasm0(patch, wasm.__wbindgen_malloc);
-    const len1 = WASM_VECTOR_LEN;
-    wasm.patch_buffer_rgba_instant(ptr0, len0, target, target_width, target_height, ptr1, len1, patch_width, patch_height, offset_x, offset_y, scale_x, scale_y, rotate_deg);
-}
-
-/**
  * @param {Uint8Array} buffer
  * @param {number} old_width
  * @param {number} old_height
@@ -193,6 +171,58 @@ export function resize(buffer, old_width, old_height, new_width, new_height, src
     var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
     return v2;
+}
+
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+}
+/**
+ * @param {Uint8Array} target
+ * @param {number} target_width
+ * @param {number} target_height
+ * @param {Uint8Array} patch
+ * @param {number} patch_width
+ * @param {number} patch_height
+ * @param {number} offset_x
+ * @param {number} offset_y
+ * @param {PatchBufferRgbaOption} options
+ * @returns {Uint8Array}
+ */
+export function patch_buffer_rgba(target, target_width, target_height, patch, patch_width, patch_height, offset_x, offset_y, options) {
+    const ptr0 = passArray8ToWasm0(target, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArray8ToWasm0(patch, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    _assertClass(options, PatchBufferRgbaOption);
+    const ret = wasm.patch_buffer_rgba(ptr0, len0, target_width, target_height, ptr1, len1, patch_width, patch_height, offset_x, offset_y, options.__wbg_ptr);
+    var v3 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v3;
+}
+
+/**
+ * @param {Uint8Array} target
+ * @param {number} target_width
+ * @param {number} target_height
+ * @param {Uint8Array} patch
+ * @param {number} patch_width
+ * @param {number} patch_height
+ * @param {number} offset_x
+ * @param {number} offset_y
+ * @param {number} scale_x
+ * @param {number} scale_y
+ * @param {number} rotate_deg
+ * @param {PatchBufferRgbaOption} options
+ */
+export function patch_buffer_rgba_instant(target, target_width, target_height, patch, patch_width, patch_height, offset_x, offset_y, scale_x, scale_y, rotate_deg, options) {
+    var ptr0 = passArray8ToWasm0(target, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    const ptr1 = passArray8ToWasm0(patch, wasm.__wbindgen_malloc);
+    const len1 = WASM_VECTOR_LEN;
+    _assertClass(options, PatchBufferRgbaOption);
+    wasm.patch_buffer_rgba_instant(ptr0, len0, target, target_width, target_height, ptr1, len1, patch_width, patch_height, offset_x, offset_y, scale_x, scale_y, rotate_deg, options.__wbg_ptr);
 }
 
 /**
@@ -255,8 +285,63 @@ export function png_to_raw(png_buffer, _width, _height) {
     return v2;
 }
 
+/**
+ * @enum {0 | 1 | 2}
+ */
+export const AntialiasMode = Object.freeze({
+    Nearest: 0, "0": "Nearest",
+    Bilinear: 1, "1": "Bilinear",
+    Bicubic: 2, "2": "Bicubic",
+});
+
+const PatchBufferRgbaOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_patchbufferrgbaoption_free(ptr >>> 0, 1));
+
+export class PatchBufferRgbaOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        PatchBufferRgbaOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_patchbufferrgbaoption_free(ptr, 0);
+    }
+    /**
+     * @returns {AntialiasMode}
+     */
+    get antialias_mode() {
+        const ret = wasm.__wbg_get_patchbufferrgbaoption_antialias_mode(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {AntialiasMode} arg0
+     */
+    set antialias_mode(arg0) {
+        wasm.__wbg_set_patchbufferrgbaoption_antialias_mode(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {AntialiasMode} antialias_mode
+     */
+    constructor(antialias_mode) {
+        const ret = wasm.patchbufferrgbaoption_new(antialias_mode);
+        this.__wbg_ptr = ret >>> 0;
+        PatchBufferRgbaOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) PatchBufferRgbaOption.prototype[Symbol.dispose] = PatchBufferRgbaOption.prototype.free;
+
 export function __wbg_wbindgencopytotypedarray_d105febdb9374ca3(arg0, arg1, arg2) {
     new Uint8Array(arg2.buffer, arg2.byteOffset, arg2.byteLength).set(getArrayU8FromWasm0(arg0, arg1));
+};
+
+export function __wbg_wbindgenthrow_451ec1a8469d7eb6(arg0, arg1) {
+    throw new Error(getStringFromWasm0(arg0, arg1));
 };
 
 export function __wbindgen_init_externref_table() {

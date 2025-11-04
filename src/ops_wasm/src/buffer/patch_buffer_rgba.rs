@@ -1,6 +1,28 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[derive(Clone, Copy)]
+pub enum AntialiasMode {
+    Nearest = 0,
+    Bilinear = 1,
+    Bicubic = 2,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Copy)]
+pub struct PatchBufferRgbaOption {
+    pub antialias_mode: AntialiasMode,
+}
+
+#[wasm_bindgen]
+impl PatchBufferRgbaOption {
+    #[wasm_bindgen(constructor)]
+    pub fn new(antialias_mode: AntialiasMode) -> PatchBufferRgbaOption {
+        PatchBufferRgbaOption { antialias_mode }
+    }
+}
+
+#[wasm_bindgen]
 pub fn patch_buffer_rgba(
     // target
     target: &[u8],
@@ -12,86 +34,219 @@ pub fn patch_buffer_rgba(
     patch_height: u32,
     offset_x: f32,
     offset_y: f32,
+    options: &PatchBufferRgbaOption,
 ) -> Vec<u8> {
-    let w = target_width as i32;
-    let h = target_height as i32;
-
-    // Expect RGBA buffers
     let mut result = target.to_vec();
+    patch_buffer_rgba_instant(
+        &mut result,
+        target_width,
+        target_height,
+        patch,
+        patch_width,
+        patch_height,
+        offset_x,
+        offset_y,
+        1.0,
+        1.0,
+        0.0,
+        options,
+    );
+    result
+}
 
-    // Validate patch buffer size matches dimensions (RGBA)
-    let src_w = patch_width as i32;
-    let src_h = patch_height as i32;
-    if src_w <= 0 || src_h <= 0 {
-        return result;
+// Sample pixel with bounds checking
+fn sample_pixel(patch: &[u8], x: i32, y: i32, src_w: i32, src_h: i32) -> (f32, f32, f32, f32) {
+    if x < 0 || x >= src_w || y < 0 || y >= src_h {
+        return (0.0, 0.0, 0.0, 0.0);
     }
-    if (src_w as usize) * (src_h as usize) * 4 != patch.len() {
-        return result;
-    }
+    let idx = (y * src_w + x) as usize * 4;
+    let r = patch[idx] as f32;
+    let g = patch[idx + 1] as f32;
+    let b = patch[idx + 2] as f32;
+    let a = patch[idx + 3] as f32;
 
-    let dx = offset_x.round() as i32;
-    let dy = offset_y.round() as i32;
+    // Convert to premultiplied alpha for proper interpolation
+    let alpha_norm = a / 255.0;
+    (r * alpha_norm, g * alpha_norm, b * alpha_norm, a)
+}
 
-    for sy in 0..src_h {
-        for sx in 0..src_w {
-            let src_idx = (sy * src_w + sx) as usize;
-            let src_start = src_idx * 4;
-            if src_start + 3 >= patch.len() {
+// Nearest neighbor sampling
+fn sample_nearest(
+    patch: &[u8],
+    src_x: f32,
+    src_y: f32,
+    src_w: i32,
+    src_h: i32,
+) -> (f32, f32, f32, f32) {
+    let x = src_x.round() as i32;
+    let y = src_y.round() as i32;
+    sample_pixel(patch, x, y, src_w, src_h)
+}
+
+// Bilinear interpolation sampling
+fn sample_bilinear(
+    patch: &[u8],
+    src_x: f32,
+    src_y: f32,
+    src_w: i32,
+    src_h: i32,
+) -> (f32, f32, f32, f32) {
+    let sx0 = src_x.floor() as i32;
+    let sy0 = src_y.floor() as i32;
+    let sx1 = (sx0 + 1).min(src_w - 1);
+    let sy1 = (sy0 + 1).min(src_h - 1);
+
+    let fx = src_x - sx0 as f32;
+    let fy = src_y - sy0 as f32;
+
+    let (pr00, pg00, pb00, a00) = sample_pixel(patch, sx0, sy0, src_w, src_h);
+    let (pr10, pg10, pb10, a10) = sample_pixel(patch, sx1, sy0, src_w, src_h);
+    let (pr01, pg01, pb01, a01) = sample_pixel(patch, sx0, sy1, src_w, src_h);
+    let (pr11, pg11, pb11, a11) = sample_pixel(patch, sx1, sy1, src_w, src_h);
+
+    // Interpolate premultiplied values
+    let pr0 = pr00 * (1.0 - fx) + pr10 * fx;
+    let pg0 = pg00 * (1.0 - fx) + pg10 * fx;
+    let pb0 = pb00 * (1.0 - fx) + pb10 * fx;
+    let a0 = a00 * (1.0 - fx) + a10 * fx;
+
+    let pr1 = pr01 * (1.0 - fx) + pr11 * fx;
+    let pg1 = pg01 * (1.0 - fx) + pg11 * fx;
+    let pb1 = pb01 * (1.0 - fx) + pb11 * fx;
+    let a1 = a01 * (1.0 - fx) + a11 * fx;
+
+    let src_pr = pr0 * (1.0 - fy) + pr1 * fy;
+    let src_pg = pg0 * (1.0 - fy) + pg1 * fy;
+    let src_pb = pb0 * (1.0 - fy) + pb1 * fy;
+    let src_a = a0 * (1.0 - fy) + a1 * fy;
+
+    (src_pr, src_pg, src_pb, src_a)
+}
+
+// Bicubic interpolation sampling
+fn sample_bicubic(
+    patch: &[u8],
+    src_x: f32,
+    src_y: f32,
+    src_w: i32,
+    src_h: i32,
+) -> (f32, f32, f32, f32) {
+    let cx = src_x.floor() as i32;
+    let cy = src_y.floor() as i32;
+    let fx = src_x - cx as f32;
+    let fy = src_y - cy as f32;
+
+    // Bicubic kernel function
+    let bicubic_weight = |t: f32| -> f32 {
+        let t = t.abs();
+        if t <= 1.0 {
+            1.5 * t * t * t - 2.5 * t * t + 1.0
+        } else if t <= 2.0 {
+            -0.5 * t * t * t + 2.5 * t * t - 4.0 * t + 2.0
+        } else {
+            0.0
+        }
+    };
+
+    let mut total_r = 0.0;
+    let mut total_g = 0.0;
+    let mut total_b = 0.0;
+    let mut total_a = 0.0;
+    let mut weight_sum = 0.0;
+
+    for dy in -1..=2 {
+        for dx in -1..=2 {
+            let sx = cx + dx;
+            let sy = cy + dy;
+
+            let weight_x = bicubic_weight(fx - dx as f32);
+            let weight_y = bicubic_weight(fy - dy as f32);
+            let weight = weight_x * weight_y;
+
+            if weight.abs() < 0.001 {
                 continue;
             }
 
-            let px_r = patch[src_start] as u8;
-            let px_g = patch[src_start + 1] as u8;
-            let px_b = patch[src_start + 2] as u8;
-            let px_a = patch[src_start + 3] as u8;
+            let (pr, pg, pb, a) = sample_pixel(patch, sx, sy, src_w, src_h);
 
-            if px_a == 0 {
-                continue;
-            }
-
-            let tx = sx + dx;
-            let ty = sy + dy;
-
-            if tx < 0 || tx >= w || ty < 0 || ty >= h {
-                continue;
-            }
-
-            let tgt_idx = (ty * w + tx) as usize;
-            let tgt_start = tgt_idx * 4;
-            if tgt_start + 3 >= result.len() {
-                continue;
-            }
-
-            let dst_r = result[tgt_start] as f32;
-            let dst_g = result[tgt_start + 1] as f32;
-            let dst_b = result[tgt_start + 2] as f32;
-            let dst_a = result[tgt_start + 3] as f32;
-
-            let src_a_f = px_a as f32 / 255.0;
-            let dst_a_f = dst_a / 255.0;
-
-            // premultiplied-like alpha blend (source over)
-            let out_r = (px_r as f32 * src_a_f + dst_r * (1.0 - src_a_f))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_g = (px_g as f32 * src_a_f + dst_g * (1.0 - src_a_f))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_b = (px_b as f32 * src_a_f + dst_b * (1.0 - src_a_f))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_a = ((src_a_f + dst_a_f * (1.0 - src_a_f)) * 255.0)
-                .round()
-                .clamp(0.0, 255.0) as u8;
-
-            result[tgt_start] = out_r;
-            result[tgt_start + 1] = out_g;
-            result[tgt_start + 2] = out_b;
-            result[tgt_start + 3] = out_a;
+            total_r += pr * weight;
+            total_g += pg * weight;
+            total_b += pb * weight;
+            total_a += a * weight;
+            weight_sum += weight;
         }
     }
 
-    result
+    if weight_sum.abs() < 0.001 {
+        return (0.0, 0.0, 0.0, 0.0);
+    }
+
+    (
+        total_r / weight_sum,
+        total_g / weight_sum,
+        total_b / weight_sum,
+        total_a / weight_sum,
+    )
+}
+
+// Apply alpha blending
+fn apply_alpha_blend(
+    target: &mut [u8],
+    tgt_start: usize,
+    src_pr: f32,
+    src_pg: f32,
+    src_pb: f32,
+    src_a: f32,
+) {
+    // Skip nearly transparent pixels
+    if src_a < 0.5 {
+        return;
+    }
+
+    // Convert back from premultiplied alpha
+    let alpha_norm = src_a / 255.0;
+    let src_r = if alpha_norm > 0.001 {
+        src_pr / alpha_norm
+    } else {
+        0.0
+    };
+    let src_g = if alpha_norm > 0.001 {
+        src_pg / alpha_norm
+    } else {
+        0.0
+    };
+    let src_b = if alpha_norm > 0.001 {
+        src_pb / alpha_norm
+    } else {
+        0.0
+    };
+
+    // Alpha blend (source over)
+    let dst_r = target[tgt_start] as f32;
+    let dst_g = target[tgt_start + 1] as f32;
+    let dst_b = target[tgt_start + 2] as f32;
+    let dst_a = target[tgt_start + 3] as f32;
+
+    let src_a_norm = src_a / 255.0;
+    let dst_a_norm = dst_a / 255.0;
+
+    let out_r = (src_r * src_a_norm + dst_r * (1.0 - src_a_norm))
+        .round()
+        .clamp(0.0, 255.0) as u8;
+    let out_g = (src_g * src_a_norm + dst_g * (1.0 - src_a_norm))
+        .round()
+        .clamp(0.0, 255.0) as u8;
+    let out_b = (src_b * src_a_norm + dst_b * (1.0 - src_a_norm))
+        .round()
+        .clamp(0.0, 255.0) as u8;
+    let out_a = ((src_a_norm + dst_a_norm * (1.0 - src_a_norm)) * 255.0)
+        .round()
+        .clamp(0.0, 255.0) as u8;
+
+    target[tgt_start] = out_r;
+    target[tgt_start + 1] = out_g;
+    target[tgt_start + 2] = out_b;
+    target[tgt_start + 3] = out_a;
 }
 
 #[wasm_bindgen]
@@ -109,6 +264,7 @@ pub fn patch_buffer_rgba_instant(
     scale_x: f32,
     scale_y: f32,
     rotate_deg: f32,
+    options: &PatchBufferRgbaOption,
 ) {
     let target_w = target_width as i32;
     let target_h = target_height as i32;
@@ -161,80 +317,14 @@ pub fn patch_buffer_rgba_instant(
                 continue;
             }
 
-            // Bilinear interpolation
-            let sx0 = src_x.floor() as i32;
-            let sy0 = src_y.floor() as i32;
-            let sx1 = (sx0 + 1).min(src_w - 1);
-            let sy1 = (sy0 + 1).min(src_h - 1);
-
-            let fx = src_x - sx0 as f32;
-            let fy = src_y - sy0 as f32;
-
-            // Sample four pixels
-            let get_pixel = |x: i32, y: i32| -> (f32, f32, f32, f32) {
-                if x < 0 || x >= src_w || y < 0 || y >= src_h {
-                    return (0.0, 0.0, 0.0, 0.0);
-                }
-                let idx = (y * src_w + x) as usize * 4;
-                (
-                    patch[idx] as f32,
-                    patch[idx + 1] as f32,
-                    patch[idx + 2] as f32,
-                    patch[idx + 3] as f32,
-                )
+            // Sample based on antialias mode
+            let (src_pr, src_pg, src_pb, src_a) = match options.antialias_mode {
+                AntialiasMode::Nearest => sample_nearest(patch, src_x, src_y, src_w, src_h),
+                AntialiasMode::Bilinear => sample_bilinear(patch, src_x, src_y, src_w, src_h),
+                AntialiasMode::Bicubic => sample_bicubic(patch, src_x, src_y, src_w, src_h),
             };
 
-            let (r00, g00, b00, a00) = get_pixel(sx0, sy0);
-            let (r10, g10, b10, a10) = get_pixel(sx1, sy0);
-            let (r01, g01, b01, a01) = get_pixel(sx0, sy1);
-            let (r11, g11, b11, a11) = get_pixel(sx1, sy1);
-
-            // Interpolate
-            let r0 = r00 * (1.0 - fx) + r10 * fx;
-            let g0 = g00 * (1.0 - fx) + g10 * fx;
-            let b0 = b00 * (1.0 - fx) + b10 * fx;
-            let a0 = a00 * (1.0 - fx) + a10 * fx;
-
-            let r1 = r01 * (1.0 - fx) + r11 * fx;
-            let g1 = g01 * (1.0 - fx) + g11 * fx;
-            let b1 = b01 * (1.0 - fx) + b11 * fx;
-            let a1 = a01 * (1.0 - fx) + a11 * fx;
-
-            let src_r = r0 * (1.0 - fy) + r1 * fy;
-            let src_g = g0 * (1.0 - fy) + g1 * fy;
-            let src_b = b0 * (1.0 - fy) + b1 * fy;
-            let src_a = a0 * (1.0 - fy) + a1 * fy;
-
-            if src_a < 1.0 {
-                continue; // Skip transparent pixels
-            }
-
-            // Alpha blend (source over)
-            let dst_r = target[tgt_start] as f32;
-            let dst_g = target[tgt_start + 1] as f32;
-            let dst_b = target[tgt_start + 2] as f32;
-            let dst_a = target[tgt_start + 3] as f32;
-
-            let src_a_norm = src_a / 255.0;
-            let dst_a_norm = dst_a / 255.0;
-
-            let out_r = (src_r * src_a_norm + dst_r * (1.0 - src_a_norm))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_g = (src_g * src_a_norm + dst_g * (1.0 - src_a_norm))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_b = (src_b * src_a_norm + dst_b * (1.0 - src_a_norm))
-                .round()
-                .clamp(0.0, 255.0) as u8;
-            let out_a = ((src_a_norm + dst_a_norm * (1.0 - src_a_norm)) * 255.0)
-                .round()
-                .clamp(0.0, 255.0) as u8;
-
-            target[tgt_start] = out_r;
-            target[tgt_start + 1] = out_g;
-            target[tgt_start + 2] = out_b;
-            target[tgt_start + 3] = out_a;
+            apply_alpha_blend(target, tgt_start, src_pr, src_pg, src_pb, src_a);
         }
     }
 }
