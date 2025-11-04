@@ -24,5 +24,5 @@ export {
 
 // Ops
 export { floodFill } from './src/ops/fill/FloodFill.js';
-export { putShape, putShapeLine, type ShapeMask } from './src/ops/pattern/Pattern.js';
-export { transferBuffer } from './src/ops/transfer/Transfer.js';
+export { putShape, putShapeLine, type ShapeMask } from './src/ops/pattern/Shape.js';
+export { transferBufferInstant } from './src/ops/transfer/Transfer.js';

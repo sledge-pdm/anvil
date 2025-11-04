@@ -3,7 +3,7 @@
 // 下のレイヤーと合成 => LayerMergeApplier
 // 選択範囲をレイヤーに転写 => FloatingBufferApplier
 
-import { patch_buffer_rgba } from '../../ops_wasm/pkg/anvil_ops_wasm.js';
+import { patch_buffer_rgba_instant } from '../../ops_wasm/pkg/anvil_ops_wasm.js';
 
 // レイヤー合成だけは単なる上書きだけではなくwebGL合成を行うので少し異なるが、基本的にバッファをバッファの上にオフセットやスケールを指定して転写するのは変わらない
 // 今後、画像や選択範囲の変形等もサポートすることを考えると、LayerMerge以外の転写操作はAnvilのここに集約したい。
@@ -21,7 +21,7 @@ interface TransferOptions {
 //     blendMode?: BlendMode
 // }
 
-export function transferBuffer(
+export function transferBufferInstant(
   source: Uint8ClampedArray,
   sourceWidth: number,
   sourceHeight: number,
@@ -29,11 +29,11 @@ export function transferBuffer(
   targetWidth: number,
   targetHeight: number,
   options?: TransferOptions
-): Uint8ClampedArray {
+): void {
   const { scaleX = 1.0, scaleY = 1.0, rotate = 0, offsetX = 0, offsetY = 0 } = options || {};
 
   try {
-    const res = patch_buffer_rgba(
+    patch_buffer_rgba_instant(
       new Uint8Array(target.buffer, target.byteOffset, target.byteLength),
       targetWidth,
       targetHeight,
@@ -41,11 +41,12 @@ export function transferBuffer(
       sourceWidth,
       sourceHeight,
       offsetX,
-      offsetY
+      offsetY,
+      scaleX,
+      scaleY,
+      rotate
     );
-    return new Uint8ClampedArray(res.buffer, res.byteOffset, res.byteLength);
   } catch (e) {
-    console.error('applyFloatingBuffer wasm error', e);
-    return target;
+    console.error('transferBuffer wasm error', e);
   }
 }
