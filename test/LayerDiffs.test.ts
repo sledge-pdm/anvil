@@ -1,15 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LayerDiffs } from '../src/buffer/diff/LayerDiffs';
 import { LayerDiffsController } from '../src/buffer/LayerDiffsController';
+import { LayerTilesController } from '../src/buffer/LayerTilesController';
 import { PixelBuffer } from '../src/buffer/PixelBuffer';
-import { LayerTiles } from '../src/buffer/tile/LayerTiles';
-import { LayerTilesController } from '../src/buffer/tile/LayerTilesController';
-import type { RGBA, TileIndex } from '../src/types/types';
+import type { RGBA } from '../src/types/types';
 
-describe('LayerDiffs and LayerDiffsController', () => {
-  let diffs: LayerDiffs;
+describe('LayerDiffsController', () => {
   let buffer: PixelBuffer;
-  let tiles: LayerTiles;
   let tilesController: LayerTilesController;
   let diffsController: LayerDiffsController;
   const bufferWidth = 64;
@@ -18,312 +14,372 @@ describe('LayerDiffs and LayerDiffsController', () => {
 
   beforeEach(() => {
     buffer = new PixelBuffer(bufferWidth, bufferHeight);
-    tiles = new LayerTiles(bufferWidth, bufferHeight, tileSize);
-    tilesController = new LayerTilesController(tiles, buffer);
-    diffs = new LayerDiffs();
-    diffsController = new LayerDiffsController(diffs, tilesController, tileSize, bufferWidth, bufferHeight);
+    tilesController = new LayerTilesController(buffer, bufferWidth, bufferHeight, tileSize);
+    diffsController = new LayerDiffsController();
   });
 
-  describe('LayerDiffs Model', () => {
+  describe('Basic functionality', () => {
     it('should initialize empty', () => {
-      expect(diffs.hasPendingChanges()).toBe(false);
-      expect(diffs.getPendingPixelCount()).toBe(0);
+      expect(diffsController.hasPendingChanges()).toBe(false);
     });
 
     it('should accumulate pixel diffs', () => {
-      const tileIndex: TileIndex = { row: 0, col: 0 };
+      diffsController.addPixel({
+        x: 0,
+        y: 5,
+        color: [0, 255, 0, 255],
+      });
+      diffsController.addPixel({
+        x: 0,
+        y: 10,
+        color: [255, 255, 0, 255],
+      });
 
-      diffs.addPixelChange(tileIndex, 5, [255, 0, 0, 255], [0, 255, 0, 255]);
-      diffs.addPixelChange(tileIndex, 10, [0, 0, 255, 255], [255, 255, 0, 255]);
+      expect(diffsController.hasPendingChanges()).toBe(true);
 
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      const pending = diffs.getPendingChanges();
-      expect(pending.pixelChanges).toHaveLength(1);
-      expect(pending.pixelChanges[0].indices).toHaveLength(2);
-    });
-
-    it('should handle tile fills', () => {
-      const tileIndex: TileIndex = { row: 1, col: 1 };
-      const newColor: RGBA = [128, 64, 192, 255];
-      const oldColor: RGBA = [255, 255, 255, 255];
-
-      diffs.addTileFill(tileIndex, oldColor, newColor);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      const pending = diffs.getPendingChanges();
-      expect(pending.tileFills).toHaveLength(1);
-      expect(pending.tileFills[0].tile).toEqual(tileIndex);
+      const pending = diffsController.flush();
+      expect(pending).toBeDefined();
+      expect(pending?.pixels).toHaveLength(2);
     });
 
     it('should handle whole buffer changes', () => {
-      const oldBuffer = new Uint8ClampedArray(bufferWidth * bufferHeight * 4);
-      const newBuffer = new Uint8ClampedArray(bufferWidth * bufferHeight * 4);
-      oldBuffer.fill(100);
-      newBuffer.fill(200);
+      const swapBuffer = new Uint8ClampedArray(bufferWidth * bufferHeight * 4);
+      swapBuffer.fill(200);
 
-      diffs.addWholeBufferChange(newBuffer);
+      diffsController.addWhole({
+        swapBuffer,
+        width: bufferWidth,
+        height: bufferHeight,
+      });
 
-      expect(diffs.hasPendingChanges()).toBe(true);
+      expect(diffsController.hasPendingChanges()).toBe(true);
 
-      const pending = diffs.getPendingChanges();
-      expect(pending.wholeBuffer).toBeDefined();
-      expect(pending.wholeBuffer!.swapBuffer).toEqual(newBuffer);
+      const pending = diffsController.flush();
+      expect(pending).toBeDefined();
+      expect(pending?.whole).toBeDefined();
+    });
+
+    it('should handle partial buffer changes', () => {
+      const boundBox = { x: 10, y: 10, width: 20, height: 20 };
+      const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+      swapBuffer.fill(128);
+
+      diffsController.addPartial({
+        boundBox,
+        swapBuffer,
+      });
+
+      expect(diffsController.hasPendingChanges()).toBe(true);
+
+      const pending = diffsController.flush();
+      expect(pending).toBeDefined();
+      expect(pending?.partial).toBeDefined();
     });
 
     it('should clear all changes', () => {
-      const tileIndex: TileIndex = { row: 0, col: 0 };
-
-      diffs.addPixelChange(tileIndex, 5, [255, 0, 0, 255], [0, 255, 0, 255]);
-      diffs.addTileFill(tileIndex, [128, 64, 192, 255], [255, 255, 255, 255]);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      diffs.clear();
-
-      expect(diffs.hasPendingChanges()).toBe(false);
-      expect(diffs.getPendingPixelCount()).toBe(0);
-    });
-
-    it('should handle multiple tiles', () => {
-      const tile1: TileIndex = { row: 0, col: 0 };
-      const tile2: TileIndex = { row: 0, col: 1 };
-      const tile3: TileIndex = { row: 1, col: 0 };
-
-      diffs.addPixelChange(tile1, 5, [255, 0, 0, 255], [0, 0, 0, 0]);
-      diffs.addPixelChange(tile2, 10, [0, 255, 0, 255], [0, 0, 0, 0]);
-      diffs.addTileFill(tile3, [128, 128, 128, 255], [0, 0, 255, 255]);
-
-      const pending = diffs.getPendingChanges();
-      expect(pending.pixelChanges).toHaveLength(2);
-      expect(pending.tileFills).toHaveLength(1);
-
-      // Check that changes are properly separated by tile
-      expect(pending.pixelChanges[0].tile).toEqual(tile1);
-      expect(pending.pixelChanges[1].tile).toEqual(tile2);
-      expect(pending.tileFills[0].tile).toEqual(tile3);
-    });
-
-    it('should track pixel changes per tile location', () => {
-      const tileIndex: TileIndex = { row: 0, col: 0 };
-
-      expect(diffs.hasPixelChange(tileIndex, 5)).toBe(false);
-
-      diffs.addPixelChange(tileIndex, 5, [0, 0, 0, 0], [255, 0, 0, 255]);
-
-      expect(diffs.hasPixelChange(tileIndex, 5)).toBe(true);
-      expect(diffs.hasPixelChange(tileIndex, 10)).toBe(false);
-    });
-  });
-
-  describe('LayerDiffsController', () => {
-    it('should record pixel changes by global coordinates', () => {
-      const oldColor: RGBA = [0, 0, 0, 0];
-      const newColor: RGBA = [255, 128, 64, 200];
-
-      diffsController.addPixel(10, 15, oldColor, newColor);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      // Verify the change is tracked
-      expect(diffsController.hasPixelDiff(10, 15)).toBe(true);
-      expect(diffsController.hasPixelDiff(20, 25)).toBe(false);
-    });
-
-    it('should record tile fills', () => {
-      const tileIndex: TileIndex = { row: 0, col: 1 };
-      const oldColor: RGBA = [100, 100, 100, 255];
-      const newColor: RGBA = [255, 0, 0, 255];
-
-      diffsController.addTileFill(tileIndex, oldColor, newColor);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      const pending = diffs.getPendingChanges();
-      expect(pending.tileFills).toHaveLength(1);
-      expect(pending.tileFills[0].tile).toEqual(tileIndex);
-    });
-
-    it('should generate patches correctly', () => {
-      const color1: RGBA = [255, 0, 0, 255];
-      const color2: RGBA = [0, 255, 0, 255];
-      const fillColor: RGBA = [0, 0, 255, 255];
-
-      // Record some changes
-      diffsController.addPixel(5, 10, [0, 0, 0, 0], color1);
-      diffsController.addPixel(25, 30, [0, 0, 0, 0], color2);
-      diffsController.addTileFill({ row: 1, col: 1 }, [128, 128, 128, 255], fillColor);
-
-      const patch = diffsController.previewPatch();
-
-      expect(patch).toBeDefined();
-      expect(patch!.pixels).toBeDefined();
-      expect(patch!.tiles).toBeDefined();
-      expect(patch!.pixels!).toHaveLength(1); // Pixel changes are grouped by tile
-      expect(patch!.tiles!).toHaveLength(1);
-    });
-
-    it('should flush changes correctly', async () => {
-      diffsController.addPixel(10, 10, [0, 0, 0, 0], [255, 255, 255, 255]);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      const patch = await diffsController.flush();
-
-      expect(patch).toBeDefined();
-      expect(diffs.hasPendingChanges()).toBe(false);
-    });
-
-    it('should handle mixed operations efficiently', () => {
-      const redColor: RGBA = [255, 0, 0, 255];
-      const blueColor: RGBA = [0, 0, 255, 255];
-      const greenColor: RGBA = [0, 255, 0, 255];
-
-      // Individual pixel changes in first tile
-      diffsController.addPixel(5, 5, [0, 0, 0, 0], redColor);
-      diffsController.addPixel(10, 10, [0, 0, 0, 0], redColor);
-      diffsController.addPixel(15, 15, [0, 0, 0, 0], redColor);
-
-      // Tile fill operation in second tile
-      diffsController.addTileFill({ row: 0, col: 1 }, [128, 128, 128, 255], blueColor);
-
-      // More pixel changes in a different tile
-      diffsController.addPixel(35, 35, [0, 0, 0, 0], greenColor);
-      diffsController.addPixel(40, 40, [0, 0, 0, 0], greenColor);
-
-      const patch = diffsController.previewPatch();
-
-      expect(patch!.pixels!).toHaveLength(2); // Two tiles with pixel changes
-      expect(patch!.tiles!).toHaveLength(1); // One tile fill
-      expect(patch!.whole).toBeUndefined();
-
-      // Verify pixel counts
-      const tile1Pixels = patch!.pixels!.find((p) => p.tile.row === 0 && p.tile.col === 0);
-      const tile2Pixels = patch!.pixels!.find((p) => p.tile.row === 1 && p.tile.col === 1);
-
-      expect(tile1Pixels?.idx.length).toBe(3); // 3 pixel changes in tile (0,0)
-      expect(tile2Pixels?.idx.length).toBe(2); // 2 pixel changes in tile (1,1)
-    });
-
-    it('should handle whole buffer changes', () => {
-      const bufferSize = bufferWidth * bufferHeight * 4;
-      const oldBufferData = new Uint8ClampedArray(bufferSize);
-      const newBufferData = new Uint8ClampedArray(bufferSize);
-      oldBufferData.fill(128);
-      newBufferData.fill(255);
-
-      diffsController.addWholeBufferChange(newBufferData);
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-
-      const patch = diffsController.previewPatch();
-      expect(patch!.whole).toBeDefined();
-      expect(patch!.pixels).toBeUndefined();
-      expect(patch!.tiles).toBeUndefined();
-    });
-
-    it('should provide useful debugging information', () => {
-      // Initially clean
-      let debugInfo = diffsController.getDebugInfo();
-      expect(debugInfo.hasPending).toBe(false);
-      expect(debugInfo.pendingPixels).toBe(0);
-      expect(debugInfo.hasWhole).toBe(false);
-
-      // Add some changes
-      diffsController.addPixel(10, 10, [0, 0, 0, 0], [255, 0, 0, 255]);
-      diffsController.addTileFill({ row: 1, col: 1 }, [128, 128, 128, 255], [0, 255, 0, 255]);
-
-      debugInfo = diffsController.getDebugInfo();
-      expect(debugInfo.hasPending).toBe(true);
-      expect(debugInfo.pendingPixels).toBeGreaterThan(0);
-      expect(debugInfo.tileCount).toBe(1);
-      expect(debugInfo.pixelTileCount).toBe(1);
-      expect(debugInfo.memoryUsage).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Integration scenarios', () => {
-    it('should track complex editing session', async () => {
-      // Phase 1: Draw some pixels
-      for (let i = 0; i < 10; i++) {
-        diffsController.addPixel(i * 3, i * 2, [0, 0, 0, 0], [i * 25, 255 - i * 25, 128, 255]);
-      }
-
-      // Phase 2: Fill a tile
-      diffsController.addTileFill({ row: 1, col: 0 }, [64, 64, 64, 255], [255, 128, 0, 255]);
-
-      // Phase 3: More pixel edits in second tile row
-      for (let i = 0; i < 5; i++) {
-        diffsController.addPixel(40 + i, 40 + i, [255, 128, 0, 255], [0, 0, 255, 255]);
-      }
-
-      expect(diffs.hasPendingChanges()).toBe(true);
-      expect(diffsController.getPendingPixelCount()).toBeGreaterThan(1000); // Tile fill adds many pixels
-
-      const patch = await diffsController.flush();
-
-      expect(patch).toBeDefined();
-      expect(patch!.pixels).toBeDefined();
-      expect(patch!.tiles).toBeDefined();
-
-      // After flush, diffs should be clean
-      expect(diffs.hasPendingChanges()).toBe(false);
-    });
-
-    it('should handle edge case coordinates', () => {
-      // Test pixels at tile boundaries
-      const edgeCoords = [
-        [0, 0], // Top-left of first tile
-        [31, 31], // Bottom-right of first tile
-        [32, 32], // Top-left of second tile
-        [63, 63], // Bottom-right of last tile
-      ];
-
-      edgeCoords.forEach(([x, y], index) => {
-        diffsController.addPixel(x, y, [0, 0, 0, 0], [index * 60, index * 60, index * 60, 255]);
+      diffsController.addPixel({
+        x: 5,
+        y: 5,
+        color: [255, 0, 0, 255],
       });
 
-      expect(diffs.hasPendingChanges()).toBe(true);
+      expect(diffsController.hasPendingChanges()).toBe(true);
 
-      const patch = diffsController.previewPatch();
-      expect(patch!.pixels).toBeDefined();
+      diffsController.discard();
 
-      // Verify all edge pixels are tracked
-      edgeCoords.forEach(([x, y]) => {
-        expect(diffsController.hasPixelDiff(x, y)).toBe(true);
+      expect(diffsController.hasPendingChanges()).toBe(false);
+    });
+
+    describe('Pixel operations', () => {
+      it('should handle single pixel changes', () => {
+        const color: RGBA = [255, 128, 64, 200];
+
+        diffsController.addPixel({
+          x: 10,
+          y: 15,
+          color,
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.previewPatch();
+        expect(patch).toBeDefined();
+        expect(patch?.pixels).toHaveLength(1);
+      });
+
+      it('should flush changes correctly', () => {
+        diffsController.addPixel({
+          x: 10,
+          y: 10,
+          color: [255, 255, 255, 255],
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.flush();
+
+        expect(patch).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(false);
       });
     });
 
-    it('should discard pending changes when requested', () => {
-      diffsController.addPixel(10, 10, [0, 0, 0, 0], [255, 0, 0, 255]);
-      diffsController.addTileFill({ row: 1, col: 1 }, [128, 128, 128, 255], [0, 255, 0, 255]);
+    describe('Mixed operations', () => {
+      it('should handle multiple pixel changes', () => {
+        const redColor: RGBA = [255, 0, 0, 255];
+        const greenColor: RGBA = [0, 255, 0, 255];
 
-      expect(diffs.hasPendingChanges()).toBe(true);
+        // Individual pixel changes in different locations
+        diffsController.addPixel({ x: 5, y: 5, color: redColor });
+        diffsController.addPixel({ x: 10, y: 10, color: redColor });
+        diffsController.addPixel({ x: 15, y: 15, color: redColor });
 
-      diffsController.discardPendingChanges();
+        // More pixel changes in a different area
+        diffsController.addPixel({ x: 35, y: 35, color: greenColor });
+        diffsController.addPixel({ x: 40, y: 40, color: greenColor });
 
-      expect(diffs.hasPendingChanges()).toBe(false);
-      expect(diffsController.getPendingPixelCount()).toBe(0);
+        const patch = diffsController.previewPatch();
+
+        expect(patch?.pixels).toBeDefined();
+        expect(patch?.pixels?.length).toBeGreaterThan(0);
+        expect(patch?.whole).toBeUndefined();
+        expect(patch?.partial).toBeUndefined();
+      });
+
+      it('should handle whole buffer replacement', () => {
+        const bufferSize = bufferWidth * bufferHeight * 4;
+        const swapBuffer = new Uint8ClampedArray(bufferSize);
+        swapBuffer.fill(255);
+
+        diffsController.addWhole({
+          swapBuffer,
+          width: bufferWidth,
+          height: bufferHeight,
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.previewPatch();
+        expect(patch?.whole).toBeDefined();
+        expect(patch?.pixels).toBeUndefined();
+        expect(patch?.partial).toBeUndefined();
+      });
+
+      it('should handle partial buffer changes', () => {
+        const boundBox = { x: 16, y: 16, width: 32, height: 32 };
+        const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+        swapBuffer.fill(128);
+
+        diffsController.addPartial({
+          boundBox,
+          swapBuffer,
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.previewPatch();
+        expect(patch?.partial).toBeDefined();
+        expect(patch?.pixels).toBeUndefined();
+        expect(patch?.whole).toBeUndefined();
+      });
     });
 
-    it('should handle tile fill overriding pixel changes', () => {
-      const tileIndex: TileIndex = { row: 0, col: 0 };
+    describe('Integration scenarios', () => {
+      it('should handle complex editing session', () => {
+        // Phase 1: Draw some pixels
+        for (let i = 0; i < 10; i++) {
+          diffsController.addPixel({
+            x: i * 3,
+            y: i * 2,
+            color: [i * 25, 255 - i * 25, 128, 255],
+          });
+        }
 
-      // First add pixel changes
-      diffsController.addPixel(5, 5, [0, 0, 0, 0], [255, 0, 0, 255]);
-      diffsController.addPixel(10, 10, [0, 0, 0, 0], [0, 255, 0, 255]);
+        expect(diffsController.hasPendingChanges()).toBe(true);
 
-      let pending = diffs.getPendingChanges();
-      expect(pending.pixelChanges).toHaveLength(1);
-      expect(pending.tileFills).toHaveLength(0);
+        const patch = diffsController.flush();
 
-      // Then add tile fill - should override pixel changes for that tile
-      diffsController.addTileFill(tileIndex, [64, 64, 64, 255], [0, 0, 255, 255]);
+        expect(patch).toBeDefined();
+        expect(patch?.pixels).toBeDefined();
 
-      pending = diffs.getPendingChanges();
-      expect(pending.pixelChanges).toHaveLength(0); // Pixel changes should be cleared
-      expect(pending.tileFills).toHaveLength(1);
+        // After flush, diffs should be clean
+        expect(diffsController.hasPendingChanges()).toBe(false);
+      });
+
+      it('should handle edge case coordinates', () => {
+        // Test pixels at tile boundaries
+        const edgeCoords = [
+          [0, 0], // Top-left of first tile
+          [31, 31], // Bottom-right of first tile
+          [32, 32], // Top-left of second tile
+          [63, 63], // Bottom-right of last tile
+        ];
+
+        edgeCoords.forEach(([x, y], index) => {
+          diffsController.addPixel({
+            x,
+            y,
+            color: [index * 60, index * 60, index * 60, 255],
+          });
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.previewPatch();
+        expect(patch?.pixels).toBeDefined();
+      });
+
+      it('should discard pending changes when requested', () => {
+        diffsController.addPixel({
+          x: 10,
+          y: 10,
+          color: [255, 0, 0, 255],
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        diffsController.discard();
+
+        expect(diffsController.hasPendingChanges()).toBe(false);
+      });
+
+      it('should handle partial buffer operations', () => {
+        const boundBox = { x: 10, y: 10, width: 32, height: 32 };
+        const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+
+        // Fill with a pattern
+        for (let i = 0; i < swapBuffer.length; i += 4) {
+          swapBuffer[i] = 100; // R
+          swapBuffer[i + 1] = 150; // G
+          swapBuffer[i + 2] = 200; // B
+          swapBuffer[i + 3] = 255; // A
+        }
+
+        diffsController.addPartial({
+          boundBox,
+          swapBuffer,
+        });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.previewPatch();
+        expect(patch?.partial).toBeDefined();
+        expect(patch?.partial?.boundBox).toEqual(boundBox);
+      });
+
+      it('should override pixel changes with partial changes', () => {
+        // First add pixel changes
+        diffsController.addPixel({ x: 5, y: 5, color: [255, 0, 0, 255] });
+        diffsController.addPixel({ x: 10, y: 10, color: [0, 255, 0, 255] });
+
+        let patch = diffsController.previewPatch();
+        expect(patch?.pixels).toBeDefined();
+        expect(patch?.partial).toBeUndefined();
+
+        // Then add partial change - should override pixel changes
+        const boundBox = { x: 0, y: 0, width: 32, height: 32 };
+        const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+        swapBuffer.fill(128);
+
+        diffsController.addPartial({
+          boundBox,
+          swapBuffer,
+        });
+
+        patch = diffsController.previewPatch();
+        expect(patch?.partial).toBeDefined();
+        expect(patch?.pixels).toBeUndefined(); // Pixel changes should be cleared
+      });
+
+      it('should override everything with whole buffer changes', () => {
+        // Add pixel changes
+        diffsController.addPixel({ x: 5, y: 5, color: [255, 0, 0, 255] });
+
+        // Add partial change
+        const boundBox = { x: 10, y: 10, width: 16, height: 16 };
+        const partialBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+        partialBuffer.fill(100);
+        diffsController.addPartial({ boundBox, swapBuffer: partialBuffer });
+
+        // Then add whole buffer change - should override everything
+        const wholeBuffer = new Uint8ClampedArray(bufferWidth * bufferHeight * 4);
+        wholeBuffer.fill(200);
+        diffsController.addWhole({
+          swapBuffer: wholeBuffer,
+          width: bufferWidth,
+          height: bufferHeight,
+        });
+
+        const patch = diffsController.previewPatch();
+        expect(patch?.whole).toBeDefined();
+        expect(patch?.partial).toBeUndefined();
+        expect(patch?.pixels).toBeUndefined();
+      });
+    });
+
+    describe('Preview and flush operations', () => {
+      it('should return undefined when no changes are pending', () => {
+        const patch = diffsController.previewPatch();
+        expect(patch).toBeUndefined();
+      });
+
+      it('should preview without affecting internal state', () => {
+        diffsController.addPixel({ x: 10, y: 10, color: [255, 0, 0, 255] });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch1 = diffsController.previewPatch();
+        expect(patch1).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(true); // Should still have pending changes
+
+        const patch2 = diffsController.previewPatch();
+        expect(patch2).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(true); // Should still have pending changes
+      });
+
+      it('should flush and clear internal state', () => {
+        diffsController.addPixel({ x: 10, y: 10, color: [255, 0, 0, 255] });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.flush();
+        expect(patch).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(false); // Should be cleared after flush
+      });
+
+      it('should preview partial changes without affecting internal state', () => {
+        const boundBox = { x: 20, y: 20, width: 24, height: 24 };
+        const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+        swapBuffer.fill(64);
+
+        diffsController.addPartial({ boundBox, swapBuffer });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch1 = diffsController.previewPatch();
+        expect(patch1).toBeDefined();
+        expect(patch1?.partial).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(true); // Should still have pending changes
+
+        const patch2 = diffsController.previewPatch();
+        expect(patch2).toBeDefined();
+        expect(patch2?.partial).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(true); // Should still have pending changes
+      });
+
+      it('should flush partial changes and clear internal state', () => {
+        const boundBox = { x: 8, y: 8, width: 16, height: 16 };
+        const swapBuffer = new Uint8ClampedArray(boundBox.width * boundBox.height * 4);
+        swapBuffer.fill(192);
+
+        diffsController.addPartial({ boundBox, swapBuffer });
+
+        expect(diffsController.hasPendingChanges()).toBe(true);
+
+        const patch = diffsController.flush();
+        expect(patch).toBeDefined();
+        expect(patch?.partial).toBeDefined();
+        expect(diffsController.hasPendingChanges()).toBe(false); // Should be cleared after flush
+      });
     });
   });
 });

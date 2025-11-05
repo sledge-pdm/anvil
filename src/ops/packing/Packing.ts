@@ -2,7 +2,6 @@ import { png_to_raw, raw_to_png, raw_to_webp, webp_to_raw } from '../../ops_wasm
 import { PackedPartialPatchData, PartialPatchData } from '../../types/patch/partial';
 import { PackedDiffs, PendingDiffs } from '../../types/patch/Patch';
 import { PackedPixelPatchData, PixelPatchData } from '../../types/patch/pixel';
-import { PackedTileFillPatchData, TileFillPatchData } from '../../types/patch/tileFill';
 import { PackedWholePatchData, WholePatchData } from '../../types/patch/whole';
 import { RGBA, TileIndex } from '../../types/types';
 
@@ -94,16 +93,6 @@ export function packPixels(diffs: PixelPatchData[]): PackedPixelPatchData[] {
   });
 }
 
-export function packTiles(diffs: Map<string, TileFillPatchData>): PackedTileFillPatchData[] {
-  return Object.values(diffs).map((tf) => {
-    return {
-      tileIndex: tf.tileIndex,
-      before: tf.before && rgbaToPackedU32(tf.before),
-      after: rgbaToPackedU32(tf.after),
-    };
-  });
-}
-
 export function packWhole(diff: WholePatchData): PackedWholePatchData {
   const { swapBuffer, width, height } = diff;
   const webpBuffer = rawToWebp(swapBuffer, width, height);
@@ -132,11 +121,6 @@ export function packPending(pendingDiffs: PendingDiffs): PackedDiffs {
   }
   if (pendingDiffs.partial) {
     packed.partial = pendingDiffs.partial;
-  }
-
-  // Tile fills
-  if (pendingDiffs.tileFills.size > 0) {
-    packed.tiles = packTiles(pendingDiffs.tileFills);
   }
 
   // Pixel changes - convert to the Patch format

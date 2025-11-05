@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Anvil } from '../src/Anvil';
-import type { RGBA, TileIndex } from '../src/types';
+import { RGBA, TileIndex } from '../src/types/types';
 
 describe('Anvil Facade Integration', () => {
   let anvil: Anvil;
@@ -36,7 +36,6 @@ describe('Anvil Facade Integration', () => {
 
     it('should start with no pending changes', () => {
       expect(anvil.hasPendingChanges()).toBe(false);
-      expect(anvil.getPendingPixelCount()).toBe(0);
     });
   });
 
@@ -72,32 +71,6 @@ describe('Anvil Facade Integration', () => {
       expect(() => anvil.getPixel(-1, 0)).toThrow();
       expect(() => anvil.getPixel(width, height)).toThrow();
     });
-
-    it('should support fill operations', () => {
-      const fillColor: RGBA = [200, 100, 50, 180];
-
-      // Fill a rectangular region
-      anvil.fillRect(10, 10, 20, 15, fillColor);
-
-      // Check pixels inside the rectangle
-      expect(anvil.getPixel(15, 12)).toEqual(fillColor);
-      expect(anvil.getPixel(25, 20)).toEqual(fillColor);
-
-      // Check pixels outside the rectangle
-      expect(anvil.getPixel(5, 5)).toEqual([0, 0, 0, 0]);
-      expect(anvil.getPixel(35, 30)).toEqual([0, 0, 0, 0]);
-    });
-
-    it('should support whole buffer fill', () => {
-      const backgroundColor: RGBA = [64, 128, 192, 255];
-
-      anvil.fillAll(backgroundColor);
-
-      // Check random pixels
-      expect(anvil.getPixel(0, 0)).toEqual(backgroundColor);
-      expect(anvil.getPixel(width / 2, height / 2)).toEqual(backgroundColor);
-      expect(anvil.getPixel(width - 1, height - 1)).toEqual(backgroundColor);
-    });
   });
 
   describe('Change Tracking', () => {
@@ -107,14 +80,6 @@ describe('Anvil Facade Integration', () => {
       anvil.setPixel(25, 30, [255, 255, 0, 255]);
 
       expect(anvil.hasPendingChanges()).toBe(true);
-      expect(anvil.getPendingPixelCount()).toBeGreaterThan(0);
-    });
-
-    it('should track fill operations', () => {
-      anvil.fillRect(0, 0, 32, 32, [128, 64, 32, 255]);
-
-      expect(anvil.hasPendingChanges()).toBe(true);
-      expect(anvil.getPendingPixelCount()).toBe(32 * 32);
     });
 
     it('should generate patches for changes', () => {
@@ -125,18 +90,13 @@ describe('Anvil Facade Integration', () => {
       anvil.setPixel(5, 5, redColor);
       anvil.setPixel(10, 10, redColor);
 
-      // Fill a tile
-      anvil.fillRect(32, 32, 32, 32, blueColor);
-
       const patch = anvil.previewPatch();
 
       expect(patch).toBeDefined();
       expect(patch!.pixels).toBeDefined();
-      expect(patch!.tiles).toBeDefined();
 
       // Ensure patch reflects our changes
       expect(patch!.pixels!.length).toBeGreaterThan(0);
-      expect(patch!.tiles!.length).toBeGreaterThan(0);
     });
 
     it('should flush changes and clear state', () => {
@@ -144,29 +104,16 @@ describe('Anvil Facade Integration', () => {
 
       expect(anvil.hasPendingChanges()).toBe(true);
 
-      const patch = anvil.flush();
+      const patch = anvil.flushDiffs();
 
       expect(patch).toBeDefined();
       expect(anvil.hasPendingChanges()).toBe(false);
-      expect(anvil.getPendingPixelCount()).toBe(0);
-    });
-
-    it('should discard pending changes', () => {
-      anvil.setPixel(20, 20, [80, 160, 240, 200]);
-      anvil.fillRect(50, 50, 10, 10, [255, 128, 0, 255]);
-
-      expect(anvil.hasPendingChanges()).toBe(true);
-
-      anvil.discardPendingChanges();
-
-      expect(anvil.hasPendingChanges()).toBe(false);
-      expect(anvil.getPendingPixelCount()).toBe(0);
     });
   });
 
   describe('Buffer Management', () => {
     it('should provide access to raw buffer data', () => {
-      const bufferData = anvil.getBufferData();
+      const bufferData = anvil.getBufferPointer();
 
       expect(bufferData).toBeInstanceOf(Uint8ClampedArray);
       expect(bufferData.length).toBe(width * height * 4);
@@ -180,7 +127,7 @@ describe('Anvil Facade Integration', () => {
 
       anvil.setPixel(10, 10, color);
 
-      const bufferData = anvil.getBufferData();
+      const bufferData = anvil.getBufferPointer();
       const pixelIndex = (10 * width + 10) * 4;
 
       expect(bufferData[pixelIndex]).toBe(color[0]); // R
@@ -265,7 +212,7 @@ describe('Anvil Facade Integration', () => {
 
       expect(anvil.getDirtyTileIndices()).toHaveLength(1);
 
-      anvil.flush();
+      anvil.clearDirtyTiles();
 
       expect(anvil.getDirtyTileIndices()).toHaveLength(0);
     });
@@ -287,19 +234,6 @@ describe('Anvil Facade Integration', () => {
   });
 
   describe('Performance and Memory', () => {
-    it('should provide debug information', () => {
-      anvil.setPixel(30, 30, [255, 255, 255, 255]);
-      anvil.fillRect(64, 64, 32, 32, [128, 128, 128, 255]);
-
-      const debugInfo = anvil.getDebugInfo();
-
-      expect(debugInfo.hasPending).toBe(true);
-      expect(debugInfo.pendingPixels).toBeGreaterThan(0);
-      expect(debugInfo.memoryUsage).toBeGreaterThan(0);
-      expect(debugInfo.bufferSize).toBe(width * height * 4);
-      expect(debugInfo.tileCount).toBeGreaterThan(0);
-    });
-
     it('should handle large batch operations efficiently', () => {
       const startTime = performance.now();
       const uniquePositions = new Set<string>();
@@ -320,8 +254,6 @@ describe('Anvil Facade Integration', () => {
       // Should complete within reasonable time (adjust threshold as needed)
       expect(elapsed).toBeLessThan(100); // 100ms for 1000 operations
       expect(anvil.hasPendingChanges()).toBe(true);
-      // Should count unique pixels, not total operations (due to potential coordinate duplicates)
-      expect(anvil.getPendingPixelCount()).toBe(uniquePositions.size);
     });
 
     it('should optimize repeated operations on same pixel', () => {
@@ -371,16 +303,6 @@ describe('Anvil Facade Integration', () => {
       expect(resultColor[2]).toBeLessThanOrEqual(255);
       expect(resultColor[3]).toBeGreaterThanOrEqual(0);
       expect(resultColor[3]).toBeLessThanOrEqual(255);
-    });
-
-    it('should handle zero-size operations', () => {
-      // Fill with zero width/height should not crash
-      expect(() => anvil.fillRect(10, 10, 0, 0, [255, 255, 255, 255])).not.toThrow();
-      expect(() => anvil.fillRect(10, 10, 0, 10, [255, 255, 255, 255])).not.toThrow();
-      expect(() => anvil.fillRect(10, 10, 10, 0, [255, 255, 255, 255])).not.toThrow();
-
-      // Should not create any changes
-      expect(anvil.hasPendingChanges()).toBe(false);
     });
 
     it('should handle resize to very small dimensions', () => {

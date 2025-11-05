@@ -2,13 +2,11 @@ import { packPartial, packPending, packWhole, tileKey } from '../ops/packing/Pac
 import { PartialPatchData } from '../types/patch/partial.js';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';
-import { TileFillPatchData } from '../types/patch/tileFill.js';
 import { WholePatchData } from '../types/patch/whole.js';
 
 export class LayerDiffsController {
   diffs: PendingDiffs = {
     pixels: [],
-    tileFills: new Map(),
     partial: undefined,
     whole: undefined,
   };
@@ -19,11 +17,6 @@ export class LayerDiffsController {
     this.diffs.pixels.push(unpacked);
   }
 
-  addTileFill(unpacked: TileFillPatchData) {
-    const key = tileKey(unpacked.tileIndex);
-    this.diffs.tileFills.set(key, unpacked);
-  }
-
   addPartial(unpacked: PartialPatchData) {
     const { boundBox, swapBuffer } = unpacked;
     const expected = boundBox.width * boundBox.height * 4;
@@ -32,21 +25,19 @@ export class LayerDiffsController {
 
     this.diffs.partial = packPartial(unpacked);
     this.diffs.pixels = [];
-    this.diffs.tileFills.clear();
   }
 
   addWhole(unpacked: WholePatchData) {
     this.diffs.whole = packWhole(unpacked);
     this.diffs.partial = undefined;
     this.diffs.pixels = [];
-    this.diffs.tileFills.clear();
   }
 
   /**
    * Check if there are pending changes
    */
   hasPendingChanges(): boolean {
-    return this.diffs.pixels.length > 0 || this.diffs.tileFills.size > 0 || this.diffs.partial !== undefined || this.diffs.whole !== undefined;
+    return this.diffs.pixels.length > 0 || this.diffs.partial !== undefined || this.diffs.whole !== undefined;
   }
 
   /**
@@ -79,7 +70,6 @@ export class LayerDiffsController {
    */
   discard(): void {
     this.diffs.pixels = [];
-    this.diffs.tileFills.clear();
     this.diffs.partial = undefined;
     this.diffs.whole = undefined;
   }

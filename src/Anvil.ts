@@ -174,53 +174,6 @@ export class Anvil {
     this.tilesController.detectTileUniformity(tileIndex);
   }
 
-  // Fill operations
-  fillRect(x: number, y: number, width: number, height: number, color: RGBA): void {
-    if (width <= 0 || height <= 0) return;
-
-    // Check if this fill operation covers entire tiles
-    const startTileX = Math.floor(x / this.tileSize);
-    const startTileY = Math.floor(y / this.tileSize);
-    const endTileX = Math.floor((x + width - 1) / this.tileSize);
-    const endTileY = Math.floor((y + height - 1) / this.tileSize);
-
-    // Optimize: if fill covers entire tiles exactly
-    const tilesWide = Math.ceil(this.getWidth() / this.tileSize);
-    const tilesHigh = Math.ceil(this.getHeight() / this.tileSize);
-
-    for (let tileY = startTileY; tileY <= endTileY; tileY++) {
-      for (let tileX = startTileX; tileX <= endTileX; tileX++) {
-        if (tileX >= tilesWide || tileY >= tilesHigh) continue;
-
-        const tileStartX = tileX * this.tileSize;
-        const tileStartY = tileY * this.tileSize;
-        const tileEndX = Math.min(tileStartX + this.tileSize, this.getWidth());
-        const tileEndY = Math.min(tileStartY + this.tileSize, this.getHeight());
-
-        // Check if this fill completely covers this tile
-        if (x <= tileStartX && y <= tileStartY && x + width >= tileEndX && y + height >= tileEndY) {
-          // Tile is completely covered - use tile fill optimization
-          const tileIndex = { row: tileY, col: tileX };
-          const oldColor = this.tilesController.getTileInfo(tileIndex).uniformColor || ([0, 0, 0, 0] as RGBA);
-
-          this.tilesController.fillTile(tileIndex, color);
-          this.diffsController.addTileFill({ tileIndex, before: oldColor, after: color });
-        } else {
-          // Tile is partially covered - fill individual pixels
-          for (let py = Math.max(y, tileStartY); py < Math.min(y + height, tileEndY); py++) {
-            for (let px = Math.max(x, tileStartX); px < Math.min(x + width, tileEndX); px++) {
-              this.setPixel(px, py, color);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  fillAll(color: RGBA): void {
-    this.fillRect(0, 0, this.getWidth(), this.getHeight(), color);
-  }
-
   /**
    * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
@@ -309,23 +262,6 @@ export class Anvil {
       // Update the patch to contain the previous buffer content for next swap
       patch.partial.swapBufferWebp = currentBuffer;
     }
-
-    // Tile fills
-    patch.tiles?.forEach((t) => {
-      let packed = mode === 'undo' ? t.before : t.after;
-      if (mode === 'undo' && packed === undefined) {
-        packed = 0; // transparent RGBA(0,0,0,0)
-      }
-      if (packed === undefined) return; // redo 方向で after が無いケースは無視
-      const r = (packed >> 16) & 0xff;
-      const g = (packed >> 8) & 0xff;
-      const b = packed & 0xff;
-      const a = (packed >>> 24) & 0xff;
-      const tileSize = this.getTileSize();
-      const ox = t.tileIndex.col * tileSize;
-      const oy = t.tileIndex.row * tileSize;
-      this.fillRect(ox, oy, tileSize, tileSize, [r, g, b, a]);
-    });
 
     // Pixels
     patch.pixels = patch.pixels?.map((p) => {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PixelBuffer } from '../src/buffer/PixelBuffer';
-import type { RGBA } from '../src/types';
+import { RGBA } from '../src/types/types';
 
 describe('PixelBuffer', () => {
   let buffer: PixelBuffer;

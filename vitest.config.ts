@@ -1,8 +1,19 @@
+import topLevelAwait from 'vite-plugin-top-level-await';
+import wasmPlugin from 'vite-plugin-wasm';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  plugins: [wasmPlugin(), topLevelAwait()],
   test: {
-    globals: true,
     environment: 'node',
+    globals: true,
+    setupFiles: [],
+    include: ['/test/**/*.test.ts', '/test/**/*.test.tsx'],
+    coverage: {
+      reporter: ['text', 'html'],
+    },
+  },
+  resolve: {
+    alias: {},
   },
 });

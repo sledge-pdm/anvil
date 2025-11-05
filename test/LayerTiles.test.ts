@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { LayerTilesController } from '../src/buffer/LayerTilesController';
 import { PixelBuffer } from '../src/buffer/PixelBuffer';
-import { LayerTiles } from '../src/buffer/tile/LayerTiles';
-import { LayerTilesController } from '../src/buffer/tile/LayerTilesController';
-import type { RGBA, TileIndex } from '../src/types';
+import type { RGBA, TileIndex } from '../src/types/types';
 
-describe('LayerTiles and LayerTilesController', () => {
-  let tiles: LayerTiles;
+describe('LayerTilesController', () => {
   let buffer: PixelBuffer;
   let controller: LayerTilesController;
   const tileSize = 32;
@@ -14,87 +12,86 @@ describe('LayerTiles and LayerTilesController', () => {
 
   beforeEach(() => {
     buffer = new PixelBuffer(bufferWidth, bufferHeight);
-    tiles = new LayerTiles(bufferWidth, bufferHeight, tileSize);
-    controller = new LayerTilesController(tiles, buffer);
+    controller = new LayerTilesController(buffer, bufferWidth, bufferHeight, tileSize);
   });
 
-  describe('LayerTiles Model', () => {
+  describe('LayerTilesController Model', () => {
     it('should calculate tile grid correctly', () => {
-      expect(tiles.cols).toBe(4); // 128 / 32
-      expect(tiles.rows).toBe(3); // 96 / 32
-      expect(tiles.totalTiles).toBe(12); // 4 * 3
+      expect(controller.getCols()).toBe(4); // 128 / 32
+      expect(controller.getRows()).toBe(3); // 96 / 32
+      expect(controller.totalTiles).toBe(12); // 4 * 3
     });
 
     it('should initialize with no dirty tiles', () => {
-      const stats = tiles.getStats();
+      const stats = controller.getStats();
       expect(stats.dirtyTiles).toBe(0);
-      expect(tiles.getDirtyTileIndices()).toEqual([]);
+      expect(controller.getDirtyTileIndices()).toEqual([]);
     });
 
     it('should manage dirty flags correctly', () => {
       const tileIndex: TileIndex = { row: 1, col: 2 };
 
-      expect(tiles.isDirty(tileIndex)).toBe(false);
+      expect(controller.isDirty(tileIndex)).toBe(false);
 
-      tiles.setDirty(tileIndex, true);
-      expect(tiles.isDirty(tileIndex)).toBe(true);
+      controller.setDirty(tileIndex, true);
+      expect(controller.isDirty(tileIndex)).toBe(true);
 
-      const dirtyTiles = tiles.getDirtyTileIndices();
+      const dirtyTiles = controller.getDirtyTileIndices();
       expect(dirtyTiles).toHaveLength(1);
       expect(dirtyTiles[0]).toEqual(tileIndex);
     });
 
     it('should clear dirty flags', () => {
-      tiles.setDirty({ row: 0, col: 0 }, true);
-      tiles.setDirty({ row: 1, col: 1 }, true);
-      tiles.setDirty({ row: 2, col: 3 }, true);
+      controller.setDirty({ row: 0, col: 0 }, true);
+      controller.setDirty({ row: 1, col: 1 }, true);
+      controller.setDirty({ row: 2, col: 3 }, true);
 
-      let stats = tiles.getStats();
+      let stats = controller.getStats();
       expect(stats.dirtyTiles).toBe(3);
-      expect(tiles.getDirtyTileIndices()).toHaveLength(3);
+      expect(controller.getDirtyTileIndices()).toHaveLength(3);
 
-      tiles.clearAllDirty();
+      controller.clearAllDirty();
 
-      stats = tiles.getStats();
+      stats = controller.getStats();
       expect(stats.dirtyTiles).toBe(0);
-      expect(tiles.getDirtyTileIndices()).toEqual([]);
+      expect(controller.getDirtyTileIndices()).toEqual([]);
     });
 
     it('should manage uniform color tiles', () => {
       const tileIndex: TileIndex = { row: 1, col: 1 };
       const color: RGBA = [255, 128, 64, 200];
 
-      expect(tiles.isUniform(tileIndex)).toBe(false);
+      expect(controller.isUniform(tileIndex)).toBe(false);
 
-      tiles.setUniform(tileIndex, true, color);
-      expect(tiles.isUniform(tileIndex)).toBe(true);
-      expect(tiles.getUniformColor(tileIndex)).toEqual(color);
+      controller.setUniform(tileIndex, true, color);
+      expect(controller.isUniform(tileIndex)).toBe(true);
+      expect(controller.getUniformColor(tileIndex)).toEqual(color);
     });
 
     it('should handle edge cases for tile indices', () => {
       // Valid edge cases
-      expect(tiles.isDirty({ row: 0, col: 0 })).toBe(false);
-      expect(tiles.isDirty({ row: 2, col: 3 })).toBe(false);
+      expect(controller.isDirty({ row: 0, col: 0 })).toBe(false);
+      expect(controller.isDirty({ row: 2, col: 3 })).toBe(false);
 
       // Invalid indices should not crash
-      expect(() => tiles.isDirty({ row: -1, col: 0 })).not.toThrow();
-      expect(() => tiles.isDirty({ row: 10, col: 0 })).not.toThrow();
-      expect(tiles.isDirty({ row: -1, col: 0 })).toBe(false);
-      expect(tiles.isDirty({ row: 10, col: 0 })).toBe(false);
+      expect(() => controller.isDirty({ row: -1, col: 0 })).not.toThrow();
+      expect(() => controller.isDirty({ row: 10, col: 0 })).not.toThrow();
+      expect(controller.isDirty({ row: -1, col: 0 })).toBe(false);
+      expect(controller.isDirty({ row: 10, col: 0 })).toBe(false);
     });
 
     it('should convert pixel coordinates to tile index', () => {
-      expect(tiles.pixelToTileIndex(0, 0)).toEqual({ row: 0, col: 0 });
-      expect(tiles.pixelToTileIndex(31, 31)).toEqual({ row: 0, col: 0 });
-      expect(tiles.pixelToTileIndex(32, 32)).toEqual({ row: 1, col: 1 });
-      expect(tiles.pixelToTileIndex(64, 32)).toEqual({ row: 1, col: 2 });
-      expect(tiles.pixelToTileIndex(127, 95)).toEqual({ row: 2, col: 3 });
+      expect(controller.pixelToTileIndex(0, 0)).toEqual({ row: 0, col: 0 });
+      expect(controller.pixelToTileIndex(31, 31)).toEqual({ row: 0, col: 0 });
+      expect(controller.pixelToTileIndex(32, 32)).toEqual({ row: 1, col: 1 });
+      expect(controller.pixelToTileIndex(64, 32)).toEqual({ row: 1, col: 2 });
+      expect(controller.pixelToTileIndex(127, 95)).toEqual({ row: 2, col: 3 });
     });
   });
 
-  describe('LayerTilesController', () => {
+  describe('LayerTilesController Operations', () => {
     it('should get tile bounds correctly', () => {
-      const bounds = tiles.getTileBounds({ row: 1, col: 2 });
+      const bounds = controller.getTileBounds({ row: 1, col: 2 });
 
       expect(bounds.x).toBe(64); // 2 * 32
       expect(bounds.y).toBe(32); // 1 * 32
@@ -109,8 +106,8 @@ describe('LayerTiles and LayerTilesController', () => {
       buffer.set(50, 50, color);
       controller.markDirtyByPixel(50, 50);
 
-      const expectedTile = tiles.pixelToTileIndex(50, 50);
-      expect(tiles.isDirty(expectedTile)).toBe(true);
+      const expectedTile = controller.pixelToTileIndex(50, 50);
+      expect(controller.isDirty(expectedTile)).toBe(true);
 
       // Verify pixel was actually set
       expect(buffer.get(50, 50)).toEqual(color);
@@ -123,12 +120,12 @@ describe('LayerTiles and LayerTilesController', () => {
       controller.fillTile(tileIndex, fillColor);
 
       // Tile should be marked as uniform
-      expect(tiles.isUniform(tileIndex)).toBe(true);
-      expect(tiles.getUniformColor(tileIndex)).toEqual(fillColor);
-      expect(tiles.isDirty(tileIndex)).toBe(true);
+      expect(controller.isUniform(tileIndex)).toBe(true);
+      expect(controller.getUniformColor(tileIndex)).toEqual(fillColor);
+      expect(controller.isDirty(tileIndex)).toBe(true);
 
       // Check that pixels in the tile are actually filled
-      const bounds = tiles.getTileBounds(tileIndex);
+      const bounds = controller.getTileBounds(tileIndex);
       expect(buffer.get(bounds.x, bounds.y)).toEqual(fillColor);
       expect(buffer.get(bounds.x + 15, bounds.y + 15)).toEqual(fillColor);
     });
@@ -136,11 +133,10 @@ describe('LayerTiles and LayerTilesController', () => {
     it('should handle partial tiles at edges', () => {
       // Create buffer that doesn't align perfectly with tile size
       const smallBuffer = new PixelBuffer(50, 50); // 1.56 tiles in each dimension
-      const smallTiles = new LayerTiles(50, 50, 32);
-      const smallController = new LayerTilesController(smallTiles, smallBuffer);
+      const smallController = new LayerTilesController(smallBuffer, 50, 50, 32);
 
-      expect(smallTiles.cols).toBe(2); // ceil(50/32)
-      expect(smallTiles.rows).toBe(2); // ceil(50/32)
+      expect(smallController.getCols()).toBe(2); // ceil(50/32)
+      expect(smallController.getRows()).toBe(2); // ceil(50/32)
 
       // Fill edge tile
       const edgeTile: TileIndex = { row: 1, col: 1 };
@@ -159,15 +155,15 @@ describe('LayerTiles and LayerTilesController', () => {
 
       // Fill tile uniformly
       controller.fillTile(tileIndex, uniformColor);
-      expect(tiles.isUniform(tileIndex)).toBe(true);
+      expect(controller.isUniform(tileIndex)).toBe(true);
 
       // Change one pixel and mark dirty manually
       buffer.set(5, 5, differentColor);
       controller.markDirtyByPixel(5, 5);
 
       // Tile should no longer be uniform
-      expect(tiles.isUniform(tileIndex)).toBe(false);
-      expect(tiles.isDirty(tileIndex)).toBe(true);
+      expect(controller.isUniform(tileIndex)).toBe(false);
+      expect(controller.isDirty(tileIndex)).toBe(true);
     });
 
     it('should detect tile uniformity', () => {
@@ -175,7 +171,7 @@ describe('LayerTiles and LayerTilesController', () => {
       const color: RGBA = [150, 150, 150, 255];
 
       // Manually fill buffer area
-      const bounds = tiles.getTileBounds(tileIndex);
+      const bounds = controller.getTileBounds(tileIndex);
       for (let y = bounds.y; y < bounds.y + bounds.height; y++) {
         for (let x = bounds.x; x < bounds.x + bounds.width; x++) {
           if (buffer.isInBounds(x, y)) {
@@ -185,13 +181,13 @@ describe('LayerTiles and LayerTilesController', () => {
       }
 
       // Initially not marked as uniform
-      expect(tiles.isUniform(tileIndex)).toBe(false);
+      expect(controller.isUniform(tileIndex)).toBe(false);
 
       // Detect uniformity
       const isUniform = controller.detectTileUniformity(tileIndex);
       expect(isUniform).toBe(true);
-      expect(tiles.isUniform(tileIndex)).toBe(true);
-      expect(tiles.getUniformColor(tileIndex)).toEqual(color);
+      expect(controller.isUniform(tileIndex)).toBe(true);
+      expect(controller.getUniformColor(tileIndex)).toEqual(color);
     });
   });
 
@@ -209,12 +205,12 @@ describe('LayerTiles and LayerTilesController', () => {
       buffer.set(100, 50, greenColor);
       controller.markDirtyByPixel(100, 50);
 
-      const dirtyTiles = tiles.getDirtyTileIndices();
+      const dirtyTiles = controller.getDirtyTileIndices();
       expect(dirtyTiles.length).toBeGreaterThanOrEqual(3);
 
       // Verify operations
-      expect(tiles.isUniform({ row: 0, col: 0 })).toBe(true);
-      expect(tiles.isUniform({ row: 1, col: 1 })).toBe(true);
+      expect(controller.isUniform({ row: 0, col: 0 })).toBe(true);
+      expect(controller.isUniform({ row: 1, col: 1 })).toBe(true);
       expect(buffer.get(100, 50)).toEqual(greenColor);
     });
 
@@ -229,22 +225,22 @@ describe('LayerTiles and LayerTilesController', () => {
       buffer.set(100, 80, [0, 0, 255, 255]); // Tile (2,3)
       controller.markDirtyByPixel(100, 80);
 
-      const dirtyTiles = tiles.getDirtyTileIndices();
+      const dirtyTiles = controller.getDirtyTileIndices();
       expect(dirtyTiles).toHaveLength(3);
 
       // Verify specific tiles are dirty
-      expect(tiles.isDirty({ row: 0, col: 0 })).toBe(true);
-      expect(tiles.isDirty({ row: 1, col: 1 })).toBe(true);
-      expect(tiles.isDirty({ row: 2, col: 3 })).toBe(true);
+      expect(controller.isDirty({ row: 0, col: 0 })).toBe(true);
+      expect(controller.isDirty({ row: 1, col: 1 })).toBe(true);
+      expect(controller.isDirty({ row: 2, col: 3 })).toBe(true);
 
       // Clean tiles should not be dirty
-      expect(tiles.isDirty({ row: 0, col: 1 })).toBe(false);
-      expect(tiles.isDirty({ row: 2, col: 0 })).toBe(false);
+      expect(controller.isDirty({ row: 0, col: 1 })).toBe(false);
+      expect(controller.isDirty({ row: 2, col: 0 })).toBe(false);
     });
 
     it('should provide useful statistics', () => {
       // Initially clean
-      let stats = tiles.getStats();
+      let stats = controller.getStats();
       expect(stats.totalTiles).toBe(12);
       expect(stats.dirtyTiles).toBe(0);
       expect(stats.uniformTiles).toBe(0);
@@ -253,10 +249,67 @@ describe('LayerTiles and LayerTilesController', () => {
       controller.fillTile({ row: 0, col: 0 }, [255, 0, 0, 255]);
       controller.fillTile({ row: 1, col: 1 }, [0, 255, 0, 255]);
 
-      stats = tiles.getStats();
+      stats = controller.getStats();
       expect(stats.dirtyTiles).toBe(2);
       expect(stats.uniformTiles).toBe(2);
       expect(stats.memoryUsage).toBeGreaterThan(0);
+    });
+
+    it('should handle tile resize operations', () => {
+      // Set up some state
+      controller.setDirty({ row: 0, col: 0 }, true);
+      controller.fillTile({ row: 1, col: 1 }, [255, 0, 0, 255]);
+
+      expect(controller.isDirty({ row: 0, col: 0 })).toBe(true);
+      expect(controller.isUniform({ row: 1, col: 1 })).toBe(true);
+
+      // Resize to a larger size
+      const newWidth = 160; // 5 tiles wide
+      const newHeight = 128; // 4 tiles high
+      controller.resize(newWidth, newHeight);
+
+      expect(controller.getCols()).toBe(5);
+      expect(controller.getRows()).toBe(4);
+
+      // Note: resize creates new tile grid, so previous state may not be preserved
+      // This is expected behavior for the current implementation
+    });
+
+    it('should validate all tile uniformity', () => {
+      // Manually fill some tiles with uniform colors in the buffer
+      const tileIndex1: TileIndex = { row: 0, col: 0 };
+      const tileIndex2: TileIndex = { row: 0, col: 1 };
+      const color1: RGBA = [255, 0, 0, 255];
+      const color2: RGBA = [0, 255, 0, 255];
+
+      // Fill tile areas manually in buffer
+      const bounds1 = controller.getTileBounds(tileIndex1);
+      const bounds2 = controller.getTileBounds(tileIndex2);
+
+      for (let y = bounds1.y; y < bounds1.y + bounds1.height; y++) {
+        for (let x = bounds1.x; x < bounds1.x + bounds1.width; x++) {
+          buffer.set(x, y, color1);
+        }
+      }
+
+      for (let y = bounds2.y; y < bounds2.y + bounds2.height; y++) {
+        for (let x = bounds2.x; x < bounds2.x + bounds2.width; x++) {
+          buffer.set(x, y, color2);
+        }
+      }
+
+      // Initially not marked as uniform
+      expect(controller.isUniform(tileIndex1)).toBe(false);
+      expect(controller.isUniform(tileIndex2)).toBe(false);
+
+      // Validate all tile uniformity
+      controller.validateAllTileUniformity();
+
+      // Now should be marked as uniform
+      expect(controller.isUniform(tileIndex1)).toBe(true);
+      expect(controller.isUniform(tileIndex2)).toBe(true);
+      expect(controller.getUniformColor(tileIndex1)).toEqual(color1);
+      expect(controller.getUniformColor(tileIndex2)).toEqual(color2);
     });
   });
 });

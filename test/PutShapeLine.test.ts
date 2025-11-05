@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { Anvil } from '../src/Anvil.js';
-import { putShapeLine, type ShapeMask } from '../src/ops/pattern/Pattern.js';
+import { putShapeLine, type ShapeMask } from '../src/ops/pattern/Shape.js';
 
 function makeDotMask(): ShapeMask {
   return { mask: new Uint8Array([1]), width: 1, height: 1, offsetX: 0, offsetY: 0 };
