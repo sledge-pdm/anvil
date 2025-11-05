@@ -73,14 +73,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
+          # Note: Removing cache since anvil is a submodule without pnpm-lock.yaml
 
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Type check (all workspaces)
-        run: pnpm -r exec tsc --noEmit --skipLibCheck
+      - name: Type check
+        run: pnpm exec tsc --noEmit --skipLibCheck
 
       - name: Prettier check
         run: pnpm exec prettier --check .

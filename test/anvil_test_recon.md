@@ -1,7 +1,8 @@
 ## 変わったこと
-* LayerDiffs / LayerTiles と[同名]Controllerが混在していたが、Controller一本にそれぞれ統合されている。diffs.XXXがnot foundになっていたらdiffsControllerへ移行をおこなうこと。
-* PixelDiffの扱いがtileIndice->タイル内インデックス+RGBA前後だったが、今はunpack/packの概念が導入されてaddPixelに渡すのは普通にキャンバス座標xyと"swap用のcolor"RGBAで済む。なお他のdiffについてもそうだが、swap用のcolorは「変更前」の状態を意味する。赤→黒へのピクセルの色変化の場合、addPixelには赤を渡す。undoの際これが参照されてそのピクセルが赤に戻り、diffのcolorは内部的に黒へswapされるように既になっている。
-* getPendingPixels()は完全になくなったため、その関連のテスト箇所は消すこと。
-* TileFill関連は完全になくなったため、その関連のテスト箇所は消すこと。
-* PackedのwebpBufferとunpackedのraw bufferの取り扱いに注意すること。
-* PartialDiffが新たに追加されているが、現状それらのテストは新規に作成しなくてよい(作成すべき部分にはTODOコメントを残すこと)。
+
+- LayerDiffs / LayerTiles と[同名]Controllerが混在していたが、Controller一本にそれぞれ統合されている。diffs.XXXがnot foundになっていたらdiffsControllerへ移行をおこなうこと。
+- PixelDiffの扱いがtileIndice->タイル内インデックス+RGBA前後だったが、今はunpack/packの概念が導入されてaddPixelに渡すのは普通にキャンバス座標xyと"swap用のcolor"RGBAで済む。なお他のdiffについてもそうだが、swap用のcolorは「変更前」の状態を意味する。赤→黒へのピクセルの色変化の場合、addPixelには赤を渡す。undoの際これが参照されてそのピクセルが赤に戻り、diffのcolorは内部的に黒へswapされるように既になっている。
+- getPendingPixels()は完全になくなったため、その関連のテスト箇所は消すこと。
+- TileFill関連は完全になくなったため、その関連のテスト箇所は消すこと。
+- PackedのwebpBufferとunpackedのraw bufferの取り扱いに注意すること。
+- PartialDiffが新たに追加されているが、現状それらのテストは新規に作成しなくてよい(作成すべき部分にはTODOコメントを残すこと)。

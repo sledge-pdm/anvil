@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn resize(
     // target
     buffer: &[u8],
@@ -79,15 +80,20 @@ pub fn resize(
     let row_copy_width = (copy_dst_right - copy_dst_left) as usize; // in pixels
     for dy in copy_dst_top..copy_dst_bottom {
         let sy = dy - dst_oy + src_oy;
-        if sy < 0 || sy >= old_h { continue; }
+        if sy < 0 || sy >= old_h {
+            continue;
+        }
 
         let sx_first = copy_dst_left - dst_ox + src_ox;
-        if sx_first < 0 || sx_first + (row_copy_width as i32) > old_w { continue; } // safety guard
+        if sx_first < 0 || sx_first + (row_copy_width as i32) > old_w {
+            continue;
+        } // safety guard
 
         let src_index = (sy * old_w + sx_first) as usize * 4;
         let dst_index = (dy * new_w + copy_dst_left) as usize * 4;
         let byte_len = row_copy_width * 4;
-        out[dst_index..dst_index + byte_len].copy_from_slice(&buffer[src_index..src_index + byte_len]);
+        out[dst_index..dst_index + byte_len]
+            .copy_from_slice(&buffer[src_index..src_index + byte_len]);
     }
 
     out

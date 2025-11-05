@@ -7,18 +7,21 @@
   "exports": {
     ".": "./index.ts"
   },
-  "dependencies": {
-    "@sledge/core": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.7",
+    "prettier": "^3.6.2",
+    "prettier-plugin-organize-imports": "^4.3.0"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run -c ./vitest.config.ts",
     "test:coverage": "vitest --coverage",
-    "wasm:build": "wasm-pack build ./src/ops_wasm --target bundler"
+    "wasm:build": "wasm-pack build ./src/ops_wasm --target bundler",
+    "prettier": "prettier --write . --config .prettierrc",
+    "cargo:format": "cd src/ops_wasm && cargo fmt",
+    "format": "pnpm prettier && pnpm cargo:format"
   }
 }

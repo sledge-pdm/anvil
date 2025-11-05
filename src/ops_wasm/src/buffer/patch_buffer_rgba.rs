@@ -23,6 +23,7 @@ impl PatchBufferRgbaOption {
 }
 
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn patch_buffer_rgba(
     // target
     target: &[u8],
@@ -250,6 +251,7 @@ fn apply_alpha_blend(
 }
 
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn patch_buffer_rgba_instant(
     // target (mutable)
     target: &mut [u8],

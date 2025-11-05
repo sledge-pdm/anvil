@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 /// - 高速な隣接色判定
 /// - 選択範囲制限サポート
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn scanline_flood_fill(
     buffer: &mut [u8],
     width: u32,
@@ -187,6 +188,7 @@ pub fn scanline_flood_fill(
 
 /// 選択範囲制限付きスキャンライン FloodFill
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
 pub fn scanline_flood_fill_with_mask(
     buffer: &mut [u8],
     width: u32,
