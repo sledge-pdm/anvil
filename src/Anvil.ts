@@ -38,6 +38,7 @@ export class Anvil {
   resetBuffer(buffer?: Uint8ClampedArray): void {
     this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width * this.buffer.height * 4));
   }
+
   /**
    * Load existing image data into the anvil
    * @param buffer Existing pixel buffer to copy from
