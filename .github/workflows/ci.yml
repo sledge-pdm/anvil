@@ -84,7 +84,7 @@ jobs:
       - name: Prettier check
         run: pnpm exec prettier --check .
 
-      - name: Run unit tests (Vitest)
+      - name: Run Vitest
         run: pnpm test
 
       - name: Upload Vitest results (if any)
