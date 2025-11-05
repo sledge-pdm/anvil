@@ -8,7 +8,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: [],
-    include: ['/test/**/*.test.ts', '/test/**/*.test.tsx'],
+    include: ['test/**/*.test.ts', 'test/**/*.test.tsx'],
     coverage: {
       reporter: ['text', 'html'],
     },

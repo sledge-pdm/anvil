@@ -12,12 +12,12 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^4.0.7"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "vitest",
+    "test": "vitest run -c ./vitest.config.ts",
     "test:coverage": "vitest --coverage",
     "wasm:build": "wasm-pack build ./src/ops_wasm --target bundler"
   }
