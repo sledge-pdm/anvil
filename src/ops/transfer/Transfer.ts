@@ -24,7 +24,7 @@ interface TransferOptions {
 //     blendMode?: BlendMode
 // }
 
-export function   transferBufferInstant(
+export function transferBufferInstant(
   source: Uint8ClampedArray,
   sourceWidth: number,
   sourceHeight: number,
