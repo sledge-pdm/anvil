@@ -45,9 +45,7 @@ export class Anvil {
    */
   replaceBuffer(buffer: Uint8ClampedArray, width?: number, height?: number): void {
     if (width !== undefined && height !== undefined) {
-      console.log('resizing ', this.getWidth(), this.getHeight(), ' to ', width, height);
       this.resize(width, height);
-      console.log('resized:  ', this.getWidth(), this.getHeight());
     }
 
     const expectedLength = this.buffer.width * this.buffer.height * 4;
