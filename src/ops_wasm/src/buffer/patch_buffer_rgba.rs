@@ -12,13 +12,19 @@ pub enum AntialiasMode {
 #[derive(Clone, Copy)]
 pub struct PatchBufferRgbaOption {
     pub antialias_mode: AntialiasMode,
+    pub flip_x: bool,
+    pub flip_y: bool,
 }
 
 #[wasm_bindgen]
 impl PatchBufferRgbaOption {
     #[wasm_bindgen(constructor)]
-    pub fn new(antialias_mode: AntialiasMode) -> PatchBufferRgbaOption {
-        PatchBufferRgbaOption { antialias_mode }
+    pub fn new(antialias_mode: AntialiasMode, flip_x: bool, flip_y: bool) -> PatchBufferRgbaOption {
+        PatchBufferRgbaOption {
+            antialias_mode,
+            flip_x,
+            flip_y,
+        }
     }
 }
 
@@ -311,8 +317,16 @@ pub fn patch_buffer_rgba_instant(
             let rotated_y = -centered_x * sin_r + centered_y * cos_r + src_center_y;
 
             // Apply inverse scaling
-            let src_x = rotated_x / scale_x;
-            let src_y = rotated_y / scale_y;
+            let mut src_x = rotated_x / scale_x;
+            let mut src_y = rotated_y / scale_y;
+
+            if options.flip_x {
+                src_x = (src_w as f32 - 1.0) - src_x;
+            }
+
+            if options.flip_y {
+                src_y = (src_h as f32 - 1.0) - src_y;
+            }
 
             // Check bounds
             if src_x < 0.0 || src_y < 0.0 || src_x >= src_w as f32 || src_y >= src_h as f32 {

@@ -158,4 +158,101 @@ describe('PixelBuffer', () => {
       expect(buffer.get(width - 1, height - 1)).toEqual(fillColor);
     });
   });
+
+  describe('compositing and mask operations', () => {
+    it('should transfer raw buffer with offset', () => {
+      const source = new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
+      buffer.transferFromRaw(source, 2, 2, { offsetX: 1, offsetY: 1 });
+
+      expect(buffer.get(1, 1)).toEqual([255, 0, 0, 255]);
+      expect(buffer.get(2, 1)).toEqual([0, 255, 0, 255]);
+      expect(buffer.get(1, 2)).toEqual([0, 0, 255, 255]);
+      expect(buffer.get(2, 2)).toEqual([255, 255, 255, 255]);
+    });
+
+    it('should flip source horizontally when requested', () => {
+      const source = new Uint8ClampedArray([
+        255,
+        0,
+        0,
+        255, // red
+        0,
+        255,
+        0,
+        255, // green
+        0,
+        0,
+        255,
+        255, // blue
+        255,
+        255,
+        255,
+        255, // white
+      ]);
+      buffer.transferFromRaw(source, 2, 2, { offsetX: 0, offsetY: 0, flipX: true });
+
+      expect(buffer.get(0, 0)).toEqual([0, 255, 0, 255]);
+      expect(buffer.get(1, 0)).toEqual([255, 0, 0, 255]);
+      expect(buffer.get(0, 1)).toEqual([255, 255, 255, 255]);
+      expect(buffer.get(1, 1)).toEqual([0, 0, 255, 255]);
+    });
+
+    it('should flip source vertically when requested', () => {
+      const source = new Uint8ClampedArray([
+        255,
+        0,
+        0,
+        255, // red
+        0,
+        255,
+        0,
+        255, // green
+        0,
+        0,
+        255,
+        255, // blue
+        255,
+        255,
+        255,
+        255, // white
+      ]);
+      buffer.transferFromRaw(source, 2, 2, { offsetX: 0, offsetY: 0, flipY: true });
+
+      expect(buffer.get(0, 0)).toEqual([0, 0, 255, 255]);
+      expect(buffer.get(1, 0)).toEqual([255, 255, 255, 255]);
+      expect(buffer.get(0, 1)).toEqual([255, 0, 0, 255]);
+      expect(buffer.get(1, 1)).toEqual([0, 255, 0, 255]);
+    });
+
+    it('should slice buffer using mask', () => {
+      buffer.set(0, 0, [10, 20, 30, 255]);
+      buffer.set(1, 0, [40, 50, 60, 255]);
+      buffer.set(0, 1, [70, 80, 90, 255]);
+      buffer.set(1, 1, [100, 110, 120, 255]);
+      const mask = new Uint8Array([1, 0, 0, 1]);
+
+      const sliced = buffer.sliceWithMask(mask, 2, 2, { offsetX: 0, offsetY: 0 });
+      expect(Array.from(sliced)).toEqual([10, 20, 30, 255, 0, 0, 0, 0, 0, 0, 0, 0, 100, 110, 120, 255]);
+    });
+
+    it('should crop buffer using mask', () => {
+      buffer.set(0, 0, [10, 20, 30, 255]);
+      buffer.set(1, 0, [40, 50, 60, 255]);
+      buffer.set(0, 1, [70, 80, 90, 255]);
+      buffer.set(1, 1, [100, 110, 120, 255]);
+      const mask = new Uint8Array([1, 0, 0, 0]);
+
+      const cropped = buffer.cropWithMask(mask, 2, 2, { offsetX: 0, offsetY: 0 });
+      const view = new Uint8ClampedArray(cropped);
+      const readPixel = (x: number, y: number) => {
+        const idx = (y * width + x) * 4;
+        return Array.from(view.slice(idx, idx + 4));
+      };
+
+      expect(readPixel(0, 0)).toEqual([0, 0, 0, 0]);
+      expect(readPixel(1, 0)).toEqual([40, 50, 60, 255]);
+      expect(readPixel(0, 1)).toEqual([70, 80, 90, 255]);
+      expect(readPixel(1, 1)).toEqual([100, 110, 120, 255]);
+    });
+  });
 });

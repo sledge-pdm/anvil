@@ -4,7 +4,7 @@ use wasm_bindgen::prelude::*;
 #[allow(clippy::too_many_arguments)]
 pub fn resize(
     // target
-    buffer: &[u8],
+    buffer: &mut [u8],
     old_width: u32,
     old_height: u32,
     new_width: u32,

@@ -1,7 +1,7 @@
 import { LayerDiffsController } from './buffer/LayerDiffsController';
 import { LayerTilesController } from './buffer/LayerTilesController';
-import { PixelBuffer } from './buffer/PixelBuffer';
-import { packedU32ToRgba, rawToWebp, rgbaToPackedU32, webpToRaw } from './ops/packing/Packing';
+import { PixelBuffer, TransferOptions } from './buffer/PixelBuffer';
+import { packedU32ToRgba, rgbaToPackedU32 } from './ops/packing/Packing';
 import { PackedDiffs } from './types/patch/Patch';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 
@@ -35,6 +35,51 @@ export class Anvil {
     return this.buffer.height;
   }
 
+  exportWebp(): Uint8Array {
+    return this.buffer.exportWebp();
+  }
+
+  exportPng(): Uint8Array {
+    return this.buffer.exportPng();
+  }
+
+  importRaw(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): boolean {
+    const ok = this.buffer.importRaw(buffer, width, height);
+    if (ok) {
+      this.handleBufferMutation(width, height);
+    }
+    return ok;
+  }
+
+  importWebp(buffer: Uint8Array, width: number, height: number): boolean {
+    const ok = this.buffer.importWebp(buffer, width, height);
+    if (ok) {
+      this.handleBufferMutation(width, height);
+    }
+    return ok;
+  }
+
+  importPng(buffer: Uint8Array, width: number, height: number): boolean {
+    const ok = this.buffer.importPng(buffer, width, height);
+    if (ok) {
+      this.handleBufferMutation(width, height);
+    }
+    return ok;
+  }
+
+  sliceWithMask(mask: Uint8Array, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+    return this.buffer.sliceWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
+  }
+
+  cropWithMask(mask: Uint8Array, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+    return this.buffer.cropWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
+  }
+
+  transferFromRaw(source: Uint8Array | Uint8ClampedArray, width: number, height: number, options?: TransferOptions): void {
+    this.buffer.transferFromRaw(source, width, height, options);
+    this.tilesController.setAllDirty();
+  }
+
   resetBuffer(buffer?: Uint8ClampedArray): void {
     this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width * this.buffer.height * 4));
   }
@@ -58,9 +103,7 @@ export class Anvil {
     // Copy data to internal buffer
     this.buffer.data.set(buffer);
 
-    // Reset all tracking states
-    this.diffsController.discard();
-    this.tilesController.setAllDirty();
+    this.handleBufferMutation(this.buffer.width, this.buffer.height);
   }
 
   setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: Uint8ClampedArray): void {
@@ -167,6 +210,28 @@ export class Anvil {
     this.tilesController.markDirtyByPixel(x, y);
   }
 
+  private handleBufferMutation(newWidth: number, newHeight: number): void {
+    this.tilesController.resize(newWidth, newHeight);
+    this.tilesController.setAllDirty();
+    this.diffsController.discard();
+  }
+
+  floodFill(args: {
+    startX: number;
+    startY: number;
+    color: RGBA;
+    threshold?: number;
+    mask?: {
+      buffer: Uint8Array;
+      mode: 'inside' | 'outside' | 'none';
+    };
+  }): boolean {
+    return this.buffer.floodFill(args.startX, args.startY, args.color, {
+      threshold: args.threshold,
+      mask: args.mask,
+    });
+  }
+
   private checkTileUniformity(tileIndex: { row: number; col: number }): void {
     // Use the tile controller's detectTileUniformity method
     this.tilesController.detectTileUniformity(tileIndex);
@@ -241,22 +306,18 @@ export class Anvil {
 
     // Whole buffer (swap method)
     if (patch.whole) {
-      const rawBuffer = webpToRaw(patch.whole.swapBufferWebp, this.getWidth(), this.getHeight());
-      const bufferData = this.getBufferPointer();
-      // 参照渡しでUint8Arrayビューを作成（コピーなし）
-      const currentBuffer = rawToWebp(bufferData, this.getWidth(), this.getHeight());
-      this.replaceBuffer(new Uint8ClampedArray(rawBuffer.buffer));
+      const currentBuffer = this.exportWebp();
+      this.importWebp(patch.whole.swapBufferWebp, this.getWidth(), this.getHeight());
       patch.whole.swapBufferWebp = currentBuffer;
     }
 
     // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
       const { boundBox, swapBufferWebp } = patch.partial;
-      const rawBuffer = webpToRaw(swapBufferWebp, boundBox.width, boundBox.height);
+      const decodedBuffer = PixelBuffer.fromWebp(boundBox.width, boundBox.height, swapBufferWebp);
       const currentPartial = this.getPartialBuffer(boundBox);
-      // 参照渡しでWebPエンコード（コピーなし）
-      const currentBuffer = rawToWebp(currentPartial, boundBox.width, boundBox.height);
-      this.setPartialBuffer(boundBox, new Uint8ClampedArray(rawBuffer.buffer));
+      const currentBuffer = PixelBuffer.fromRaw(boundBox.width, boundBox.height, currentPartial).exportWebp();
+      this.setPartialBuffer(boundBox, new Uint8ClampedArray(decodedBuffer.data));
       // Update the patch to contain the previous buffer content for next swap
       patch.partial.swapBufferWebp = currentBuffer;
     }

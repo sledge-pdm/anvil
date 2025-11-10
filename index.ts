@@ -5,6 +5,7 @@ export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/t
 // Core classes
 export { Anvil } from './src/Anvil.js';
 export { PixelBuffer } from './src/buffer/PixelBuffer.js';
+export type { TransferOptions } from './src/buffer/PixelBuffer.js';
 
 // For advanced usage - direct access to components
 export { LayerDiffsController } from './src/buffer/LayerDiffsController.js';
@@ -23,6 +24,5 @@ export {
 } from './src/ops/packing/Packing.js';
 
 // Ops
-export { floodFill } from './src/ops/fill/FloodFill.js';
 export { putShape, putShapeLine, type ShapeMask } from './src/ops/pattern/Shape.js';
-export { AntialiasMode, transferBufferInstant } from './src/ops/transfer/Transfer.js';
+export { AntialiasMode } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
