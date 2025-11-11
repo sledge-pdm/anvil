@@ -57,7 +57,7 @@ export function pngToRaw(buffer: Uint8Array, width: number, height: number): Uin
     `pngToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
   );
 
-  return new Uint8Array(pngBuffer.buffer);
+  return new Uint8Array(rawBuffer.buffer);
 }
 
 // Utility functions for color conversion
