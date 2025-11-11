@@ -1,6 +1,6 @@
-import { Anvil } from '../../Anvil.js';
-import { PixelPatchData } from '../../types/patch/pixel.js';
-import type { RGBA } from '../../types/types.js';
+import { Anvil } from '../Anvil.js';
+import { PixelPatchData } from '../types/patch/pixel.js';
+import type { RGBA } from '../types/types.js';
 
 /**
  * ShapeMask: 既存のビットマスク表現に加えて、行スパン(run)の高速化キャッシュを追加。
