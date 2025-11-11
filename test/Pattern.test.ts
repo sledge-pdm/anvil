@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { Anvil } from '../src/Anvil.js';
-import { putShape, type ShapeMask } from '../src/ops/pattern/Shape.js';
+import { putShape, type ShapeMask } from '../src/ops/Shape.js';
 
 function makeSquareMask(size: number): ShapeMask {
   const half = Math.floor(size / 2);
