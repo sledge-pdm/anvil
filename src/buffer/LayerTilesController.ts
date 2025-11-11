@@ -1,4 +1,4 @@
-import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/packing/Packing.js';
+import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/Packing.js';
 import type { RGBA, TileBounds, TileIndex, TileInfo } from '../types/types.js';
 import type { PixelBuffer } from './PixelBuffer.js';
 

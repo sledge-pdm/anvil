@@ -1,4 +1,4 @@
-import { packPartial, packPending, packWhole } from '../ops/packing/Packing.js';
+import { packPartial, packPending, packWhole } from '../ops/Packing.js';
 import { PartialPatchData } from '../types/patch/partial.js';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';

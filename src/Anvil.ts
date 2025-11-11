@@ -1,7 +1,7 @@
 import { LayerDiffsController } from './buffer/LayerDiffsController';
 import { LayerTilesController } from './buffer/LayerTilesController';
 import { PixelBuffer, TransferOptions } from './buffer/PixelBuffer';
-import { packedU32ToRgba, rgbaToPackedU32 } from './ops/packing/Packing';
+import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import { PackedDiffs } from './types/patch/Patch';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 

@@ -10,6 +10,8 @@ export type { TransferOptions } from './src/buffer/PixelBuffer.js';
 // For advanced usage - direct access to components
 export { LayerDiffsController } from './src/buffer/LayerDiffsController.js';
 export { LayerTilesController } from './src/buffer/LayerTilesController.js';
+
+// Ops
 export {
   linearToTileIndex,
   packPending,
@@ -19,10 +21,9 @@ export {
   rawToWebp,
   rgbaToPackedU32,
   tileIndexToLinear,
-  tileKey,
   webpToRaw,
-} from './src/ops/packing/Packing.js';
+} from './src/ops/Packing.js';
+export { putShape, putShapeLine, type ShapeMask } from './src/ops/Shape.js';
 
-// Ops
-export { putShape, putShapeLine, type ShapeMask } from './src/ops/pattern/Shape.js';
+// WASM enum
 export { AntialiasMode } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
