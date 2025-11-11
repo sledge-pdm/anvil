@@ -37,6 +37,14 @@ export class Anvil {
     return this.buffer.height;
   }
 
+  /**
+   * Exposes the underlying buffer handle for read-only operations (e.g. generating thumbnails).
+   * Callers must not mutate the returned buffer directly.
+   */
+  getBufferHandle(): RgbaBuffer {
+    return this.buffer;
+  }
+
   exportWebp(): Uint8Array {
     return this.buffer.exportWebp();
   }
