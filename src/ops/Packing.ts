@@ -3,12 +3,13 @@ import { PackedPartialPatchData, PartialPatchData } from '../types/patch/partial
 import { PackedDiffs, PendingDiffs } from '../types/patch/Patch';
 import { PackedPixelPatchData, PixelPatchData } from '../types/patch/pixel';
 import { PackedWholePatchData, WholePatchData } from '../types/patch/whole';
+import type { RawPixelData } from '../types/rawBuffer';
+import { toUint8Array } from '../types/rawBuffer';
 import { RGBA, TileIndex } from '../types/types';
 
-export function rawToWebp(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): Uint8Array {
+export function rawToWebp(buffer: RawPixelData, width: number, height: number): Uint8Array {
   const start = performance.now();
-  // Uint8ClampedArrayの場合は、同じArrayBufferを参照するUint8Arrayビューを作成
-  const uint8Buffer = buffer instanceof Uint8ClampedArray ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength) : buffer;
+  const uint8Buffer = toUint8Array(buffer);
   const webpBuffer = raw_to_webp(uint8Buffer, width, height);
   const end = performance.now();
 
@@ -17,7 +18,7 @@ export function rawToWebp(buffer: Uint8Array | Uint8ClampedArray, width: number,
     `rawToWebp: ${end - start}ms, size: ${buffer.length} > ${webpBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
   );
 
-  return webpBuffer;
+  return new Uint8Array(webpBuffer.buffer);
 }
 
 export function webpToRaw(buffer: Uint8Array, width: number, height: number): Uint8Array {
@@ -30,7 +31,7 @@ export function webpToRaw(buffer: Uint8Array, width: number, height: number): Ui
     `webpToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
   );
 
-  return rawBuffer;
+  return new Uint8Array(rawBuffer.buffer);
 }
 
 export function rawToPng(buffer: Uint8Array, width: number, height: number): Uint8Array {
@@ -43,7 +44,7 @@ export function rawToPng(buffer: Uint8Array, width: number, height: number): Uin
     `rawToPng: ${end - start}ms, size: ${buffer.length} > ${pngBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
   );
 
-  return pngBuffer;
+  return new Uint8Array(pngBuffer.buffer);
 }
 
 export function pngToRaw(buffer: Uint8Array, width: number, height: number): Uint8Array {
@@ -56,7 +57,7 @@ export function pngToRaw(buffer: Uint8Array, width: number, height: number): Uin
     `pngToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
   );
 
-  return rawBuffer;
+  return new Uint8Array(pngBuffer.buffer);
 }
 
 // Utility functions for color conversion

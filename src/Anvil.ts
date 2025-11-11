@@ -3,6 +3,8 @@ import { RgbaBuffer, TransferOptions } from './buffer/RgbaBuffer';
 import { TilesController } from './buffer/TilesController';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import { PackedDiffs } from './types/patch/Patch';
+import type { RawPixelData } from './types/rawBuffer';
+import { toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 
 /**
@@ -43,7 +45,7 @@ export class Anvil {
     return this.buffer.exportPng();
   }
 
-  importRaw(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): boolean {
+  importRaw(buffer: RawPixelData, width: number, height: number): boolean {
     const ok = this.buffer.importRaw(buffer, width, height);
     if (ok) {
       this.handleBufferMutation(width, height);
@@ -67,20 +69,20 @@ export class Anvil {
     return ok;
   }
 
-  sliceWithMask(mask: Uint8Array, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+  sliceWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
     return this.buffer.sliceWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
   }
 
-  cropWithMask(mask: Uint8Array, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+  cropWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
     return this.buffer.cropWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
   }
 
-  transferFromRaw(source: Uint8Array | Uint8ClampedArray, width: number, height: number, options?: TransferOptions): void {
+  transferFromRaw(source: RawPixelData, width: number, height: number, options?: TransferOptions): void {
     this.buffer.transferFromRaw(source, width, height, options);
     this.tilesController.setAllDirty();
   }
 
-  resetBuffer(buffer?: Uint8ClampedArray): void {
+  resetBuffer(buffer?: RawPixelData): void {
     this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width * this.buffer.height * 4));
   }
 
@@ -88,26 +90,28 @@ export class Anvil {
    * Load existing image data into the anvil
    * @param buffer Existing pixel buffer to copy from
    */
-  replaceBuffer(buffer: Uint8ClampedArray, width?: number, height?: number): void {
+  replaceBuffer(buffer: RawPixelData, width?: number, height?: number): void {
     if (width !== undefined && height !== undefined) {
       this.resize(width, height);
     }
 
     const expectedLength = this.buffer.width * this.buffer.height * 4;
-    if (buffer.length !== expectedLength) {
+    const clampedBuffer = toUint8ClampedArray(buffer);
+    if (clampedBuffer.length !== expectedLength) {
       throw new Error(
-        `Image data length ${buffer.length} does not match expected ${expectedLength}. Did you forget to resize anvil before replacing?`
+        `Image data length ${clampedBuffer.length} does not match expected ${expectedLength}. Did you forget to resize anvil before replacing?`
       );
     }
 
     // Copy data to internal buffer
-    this.buffer.data.set(buffer);
+    this.buffer.data.set(clampedBuffer);
 
     this.handleBufferMutation(this.buffer.width, this.buffer.height);
   }
 
-  setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: Uint8ClampedArray): void {
+  setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: RawPixelData): void {
     const { x, y, width: w, height: h } = boundBox;
+    const sourceBuffer = toUint8ClampedArray(source);
 
     if (w > 0 && h > 0) {
       const buf = this.getBufferPointer();
@@ -130,7 +134,7 @@ export class Anvil {
             copyW = this.getWidth() - x;
           }
           if (copyW <= 0) continue;
-          buf.set(source.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
+          buf.set(sourceBuffer.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
         }
       }
     }
@@ -241,17 +245,15 @@ export class Anvil {
    * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
    */
-  addWholeDiff(swapBuffer: Uint8ClampedArray<ArrayBufferLike>): void {
-    this.diffsController.addWhole({ swapBuffer, width: this.getWidth(), height: this.getHeight() });
+  addWholeDiff(swapBuffer: RawPixelData): void {
+    const clampedSwap = toUint8ClampedArray(swapBuffer);
+    this.diffsController.addWhole({ swapBuffer: clampedSwap, width: this.getWidth(), height: this.getHeight() });
     this.tilesController.setAllDirty();
   }
 
-  addPartialDiff(
-    boundBox: { x: number; y: number; width: number; height: number },
-    swapBuffer: Uint8ClampedArray<ArrayBufferLike>,
-    setDirty?: boolean
-  ): void {
-    this.diffsController.addPartial({ boundBox, swapBuffer });
+  addPartialDiff(boundBox: { x: number; y: number; width: number; height: number }, swapBuffer: RawPixelData, setDirty?: boolean): void {
+    const clampedSwap = toUint8ClampedArray(swapBuffer);
+    this.diffsController.addPartial({ boundBox, swapBuffer: clampedSwap });
 
     if (setDirty) {
       const tileSize = this.getTileSize();

@@ -1,4 +1,6 @@
 import { AntialiasMode, RgbaBuffer as WASMRgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
+import type { RawPixelData } from '../types/rawBuffer.js';
+import { toUint8Array, toUint8ClampedArray } from '../types/rawBuffer.js';
 import type { Point, RGBA, Size } from '../types/types.js';
 
 /**
@@ -11,17 +13,18 @@ export class RgbaBuffer {
   private wasmBuffer: WASMRgbaBuffer;
   private dataView!: Uint8ClampedArray;
 
-  constructor(width: number, height: number, initialData?: Uint8ClampedArray) {
+  constructor(width: number, height: number, initialData?: RawPixelData) {
     this.width = width;
     this.height = height;
     this.wasmBuffer = new WASMRgbaBuffer(width, height);
     this.refreshDataView();
 
     if (initialData) {
-      if (initialData.length !== width * height * 4) {
-        throw new Error(`Buffer size mismatch: expected ${width * height * 4}, got ${initialData.length}`);
+      const clamped = toUint8ClampedArray(initialData);
+      if (clamped.length !== width * height * 4) {
+        throw new Error(`Buffer size mismatch: expected ${width * height * 4}, got ${clamped.length}`);
       }
-      this.data.set(initialData);
+      this.data.set(clamped);
     } else if (this.data.length !== width * height * 4) {
       throw new Error(`Buffer size mismatch: expected ${width * height * 4}, got ${this.data.length}`);
     }
@@ -31,25 +34,8 @@ export class RgbaBuffer {
     return this.ensureDataView();
   }
 
-  private static toClampedView(buffer: Uint8Array | Uint8ClampedArray): Uint8ClampedArray {
-    if (buffer instanceof Uint8ClampedArray) {
-      if (buffer.byteOffset === 0 && buffer.byteLength === buffer.buffer.byteLength) {
-        return buffer;
-      }
-      return new Uint8ClampedArray(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    }
-    return new Uint8ClampedArray(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  }
-
-  private static toUint8View(buffer: Uint8Array | Uint8ClampedArray): Uint8Array {
-    if (buffer instanceof Uint8Array) {
-      return buffer;
-    }
-    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-  }
-
-  static fromRaw(width: number, height: number, rawBuffer: Uint8Array | Uint8ClampedArray): RgbaBuffer {
-    return new RgbaBuffer(width, height, RgbaBuffer.toClampedView(rawBuffer));
+  static fromRaw(width: number, height: number, rawBuffer: RawPixelData): RgbaBuffer {
+    return new RgbaBuffer(width, height, rawBuffer);
   }
 
   static fromWebp(width: number, height: number, webpBuffer: Uint8Array): RgbaBuffer {
@@ -72,12 +58,8 @@ export class RgbaBuffer {
   }
 
   private refreshDataView(): void {
-    const rawView = this.wasmBuffer.data();
-    if (rawView instanceof Uint8ClampedArray) {
-      this.dataView = rawView;
-    } else {
-      this.dataView = new Uint8ClampedArray((rawView as any).buffer, (rawView as any).byteOffset, (rawView as any).length);
-    }
+    const rawView = this.wasmBuffer.data() as RawPixelData;
+    this.dataView = toUint8ClampedArray(rawView);
   }
 
   /**
@@ -171,8 +153,8 @@ export class RgbaBuffer {
     return this.wasmBuffer.exportPng();
   }
 
-  importRaw(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): boolean {
-    const view = RgbaBuffer.toUint8View(buffer);
+  importRaw(buffer: RawPixelData, width: number, height: number): boolean {
+    const view = toUint8Array(buffer);
     const ok = this.wasmBuffer.importRaw(view, width, height);
     if (ok) {
       this.width = width;
@@ -232,8 +214,8 @@ export class RgbaBuffer {
     return this.wasmBuffer.floodFill(startX, startY, color[0], color[1], color[2], color[3], threshold);
   }
 
-  transferFromRaw(source: Uint8Array | Uint8ClampedArray, width: number, height: number, options?: TransferOptions): void {
-    const view = RgbaBuffer.toUint8View(source);
+  transferFromRaw(source: RawPixelData, width: number, height: number, options?: TransferOptions): void {
+    const view = toUint8Array(source);
     const {
       offsetX = 0,
       offsetY = 0,
@@ -265,14 +247,14 @@ export class RgbaBuffer {
     this.refreshDataView();
   }
 
-  sliceWithMask(mask: Uint8Array | Uint8ClampedArray, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
-    const maskView = RgbaBuffer.toUint8View(mask);
+  sliceWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
+    const maskView = toUint8Array(mask);
     const data = this.wasmBuffer.sliceWithMask(maskView, maskWidth, maskHeight, options?.offsetX ?? 0, options?.offsetY ?? 0);
     return new Uint8ClampedArray(data.buffer);
   }
 
-  cropWithMask(mask: Uint8Array | Uint8ClampedArray, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
-    const maskView = RgbaBuffer.toUint8View(mask);
+  cropWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
+    const maskView = toUint8Array(mask);
     const data = this.wasmBuffer.cropWithMask(maskView, maskWidth, maskHeight, options?.offsetX ?? 0, options?.offsetY ?? 0);
     return new Uint8ClampedArray(data.buffer);
   }
