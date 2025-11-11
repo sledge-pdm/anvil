@@ -4,12 +4,12 @@ export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/t
 
 // Core classes
 export { Anvil } from './src/Anvil.js';
-export { PixelBuffer } from './src/buffer/PixelBuffer.js';
-export type { TransferOptions } from './src/buffer/PixelBuffer.js';
+export { RgbaBuffer } from './src/buffer/RgbaBuffer.js';
+export type { TransferOptions } from './src/buffer/RgbaBuffer.js';
 
 // For advanced usage - direct access to components
-export { LayerDiffsController } from './src/buffer/LayerDiffsController.js';
-export { LayerTilesController } from './src/buffer/LayerTilesController.js';
+export { DiffsController } from './src/buffer/DiffsController.js';
+export { TilesController } from './src/buffer/TilesController.js';
 
 // Ops
 export {

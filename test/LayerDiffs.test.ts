@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LayerDiffsController } from '../src/buffer/LayerDiffsController';
-import { LayerTilesController } from '../src/buffer/LayerTilesController';
-import { PixelBuffer } from '../src/buffer/PixelBuffer';
+import { DiffsController } from '../src/buffer/DiffsController';
+import { RgbaBuffer } from '../src/buffer/RgbaBuffer';
+import { TilesController } from '../src/buffer/TilesController';
 import type { RGBA } from '../src/types/types';
 
-describe('LayerDiffsController', () => {
-  let buffer: PixelBuffer;
-  let tilesController: LayerTilesController;
-  let diffsController: LayerDiffsController;
+describe('DiffsController', () => {
+  let buffer: RgbaBuffer;
+  let tilesController: TilesController;
+  let diffsController: DiffsController;
   const bufferWidth = 64;
   const bufferHeight = 64;
   const tileSize = 32;
 
   beforeEach(() => {
-    buffer = new PixelBuffer(bufferWidth, bufferHeight);
-    tilesController = new LayerTilesController(buffer, bufferWidth, bufferHeight, tileSize);
-    diffsController = new LayerDiffsController();
+    buffer = new RgbaBuffer(bufferWidth, bufferHeight);
+    tilesController = new TilesController(buffer, bufferWidth, bufferHeight, tileSize);
+    diffsController = new DiffsController();
   });
 
   describe('Basic functionality', () => {

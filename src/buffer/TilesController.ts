@@ -1,12 +1,12 @@
 import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/Packing.js';
 import type { RGBA, TileBounds, TileIndex, TileInfo } from '../types/types.js';
-import type { PixelBuffer } from './PixelBuffer.js';
+import type { RgbaBuffer } from './RgbaBuffer.js';
 
 /**
  * Controller: High-level tile operations and pixel-to-tile coordination
  * Responsible for: business logic, buffer integration, uniform detection
  */
-export class LayerTilesController {
+export class TilesController {
   public readonly tileSize: number;
   public rows: number;
   public cols: number;
@@ -20,7 +20,7 @@ export class LayerTilesController {
   private uniformColors: Map<number, number> = new Map(); // tileIndex -> packed RGBA32
 
   constructor(
-    private buffer: PixelBuffer,
+    private buffer: RgbaBuffer,
     width: number,
     height: number,
     tileSize = 32
@@ -146,11 +146,20 @@ export class LayerTilesController {
    * Get tile bounds in pixel coordinates
    */
   getTileBounds(index: TileIndex): TileBounds {
+    const x = index.col * this.tileSize;
+    const y = index.row * this.tileSize;
+
+    const maxWidth = this.buffer.width;
+    const maxHeight = this.buffer.height;
+
+    const width = Math.min(this.tileSize, maxWidth - x);
+    const height = Math.min(this.tileSize, maxHeight - y);
+
     return {
-      x: index.col * this.tileSize,
-      y: index.row * this.tileSize,
-      width: this.tileSize,
-      height: this.tileSize,
+      x,
+      y,
+      width: Math.max(0, width),
+      height: Math.max(0, height),
     };
   }
 

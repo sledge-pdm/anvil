@@ -2,8 +2,8 @@ import { RGBA } from '../types';
 
 /**
  * Pixel Diff
- * unpacked: position + before/after RGBA
- * packed: position + before/after packed RGBA32
+ * unpacked: position + previous RGBA (pre-change value)
+ * packed: position + previous color stored as packed RGBA32
  */
 
 export interface PixelPatchData {

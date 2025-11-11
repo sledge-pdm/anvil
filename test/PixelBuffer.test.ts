@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PixelBuffer } from '../src/buffer/PixelBuffer';
+import { RgbaBuffer } from '../src/buffer/RgbaBuffer';
 import { RGBA } from '../src/types/types';
 
-describe('PixelBuffer', () => {
-  let buffer: PixelBuffer;
+describe('RgbaBuffer', () => {
+  let buffer: RgbaBuffer;
   const width = 16;
   const height = 16;
 
   beforeEach(() => {
-    buffer = new PixelBuffer(width, height);
+    buffer = new RgbaBuffer(width, height);
   });
 
   describe('initialization', () => {
@@ -26,7 +26,7 @@ describe('PixelBuffer', () => {
     it('should accept initial data', () => {
       const data = new Uint8ClampedArray(width * height * 4);
       data.fill(255); // Fill with white
-      const bufferWithData = new PixelBuffer(width, height, data);
+      const bufferWithData = new RgbaBuffer(width, height, data);
 
       const pixel = bufferWithData.get(0, 0);
       expect(pixel).toEqual([255, 255, 255, 255]);

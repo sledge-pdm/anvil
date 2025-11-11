@@ -1,20 +1,20 @@
-import { AntialiasMode, RgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
+import { AntialiasMode, RgbaBuffer as WASMRgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
 import type { Point, RGBA, Size } from '../types/types.js';
 
 /**
  * Core pixel buffer operations - raw RGBA8 array management
  * Model responsibility: owns buffer state, provides bounds-checked access
  */
-export class PixelBuffer {
+export class RgbaBuffer {
   public width: number;
   public height: number;
-  private wasmBuffer: RgbaBuffer;
+  private wasmBuffer: WASMRgbaBuffer;
   private dataView!: Uint8ClampedArray;
 
   constructor(width: number, height: number, initialData?: Uint8ClampedArray) {
     this.width = width;
     this.height = height;
-    this.wasmBuffer = new RgbaBuffer(width, height);
+    this.wasmBuffer = new WASMRgbaBuffer(width, height);
     this.refreshDataView();
 
     if (initialData) {
@@ -48,18 +48,18 @@ export class PixelBuffer {
     return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
   }
 
-  static fromRaw(width: number, height: number, rawBuffer: Uint8Array | Uint8ClampedArray): PixelBuffer {
-    return new PixelBuffer(width, height, PixelBuffer.toClampedView(rawBuffer));
+  static fromRaw(width: number, height: number, rawBuffer: Uint8Array | Uint8ClampedArray): RgbaBuffer {
+    return new RgbaBuffer(width, height, RgbaBuffer.toClampedView(rawBuffer));
   }
 
-  static fromWebp(width: number, height: number, webpBuffer: Uint8Array): PixelBuffer {
-    const buffer = new PixelBuffer(width, height);
+  static fromWebp(width: number, height: number, webpBuffer: Uint8Array): RgbaBuffer {
+    const buffer = new RgbaBuffer(width, height);
     buffer.importWebp(webpBuffer, width, height);
     return buffer;
   }
 
-  static fromPng(width: number, height: number, pngBuffer: Uint8Array): PixelBuffer {
-    const buffer = new PixelBuffer(width, height);
+  static fromPng(width: number, height: number, pngBuffer: Uint8Array): RgbaBuffer {
+    const buffer = new RgbaBuffer(width, height);
     buffer.importPng(pngBuffer, width, height);
     return buffer;
   }
@@ -145,8 +145,8 @@ export class PixelBuffer {
   /**
    * Create a copy of this buffer
    */
-  clone(): PixelBuffer {
-    return new PixelBuffer(this.width, this.height, new Uint8ClampedArray(this.data));
+  clone(): RgbaBuffer {
+    return new RgbaBuffer(this.width, this.height, new Uint8ClampedArray(this.data));
   }
 
   /**
@@ -172,7 +172,7 @@ export class PixelBuffer {
   }
 
   importRaw(buffer: Uint8Array | Uint8ClampedArray, width: number, height: number): boolean {
-    const view = PixelBuffer.toUint8View(buffer);
+    const view = RgbaBuffer.toUint8View(buffer);
     const ok = this.wasmBuffer.importRaw(view, width, height);
     if (ok) {
       this.width = width;
@@ -233,7 +233,7 @@ export class PixelBuffer {
   }
 
   transferFromRaw(source: Uint8Array | Uint8ClampedArray, width: number, height: number, options?: TransferOptions): void {
-    const view = PixelBuffer.toUint8View(source);
+    const view = RgbaBuffer.toUint8View(source);
     const {
       offsetX = 0,
       offsetY = 0,
@@ -249,7 +249,7 @@ export class PixelBuffer {
     this.refreshDataView();
   }
 
-  transferFromBuffer(source: PixelBuffer, options?: TransferOptions): void {
+  transferFromBuffer(source: RgbaBuffer, options?: TransferOptions): void {
     const {
       offsetX = 0,
       offsetY = 0,
@@ -266,13 +266,13 @@ export class PixelBuffer {
   }
 
   sliceWithMask(mask: Uint8Array | Uint8ClampedArray, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
-    const maskView = PixelBuffer.toUint8View(mask);
+    const maskView = RgbaBuffer.toUint8View(mask);
     const data = this.wasmBuffer.sliceWithMask(maskView, maskWidth, maskHeight, options?.offsetX ?? 0, options?.offsetY ?? 0);
     return new Uint8ClampedArray(data.buffer);
   }
 
   cropWithMask(mask: Uint8Array | Uint8ClampedArray, maskWidth: number, maskHeight: number, options?: MaskOptions): Uint8ClampedArray {
-    const maskView = PixelBuffer.toUint8View(mask);
+    const maskView = RgbaBuffer.toUint8View(mask);
     const data = this.wasmBuffer.cropWithMask(maskView, maskWidth, maskHeight, options?.offsetX ?? 0, options?.offsetY ?? 0);
     return new Uint8ClampedArray(data.buffer);
   }

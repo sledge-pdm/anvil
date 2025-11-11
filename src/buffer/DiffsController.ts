@@ -4,7 +4,7 @@ import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
 import { PixelPatchData } from '../types/patch/pixel.js';
 import { WholePatchData } from '../types/patch/whole.js';
 
-export class LayerDiffsController {
+export class DiffsController {
   diffs: PendingDiffs = {
     pixels: [],
     partial: undefined,

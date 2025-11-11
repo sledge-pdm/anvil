@@ -1,6 +1,6 @@
-import { LayerDiffsController } from './buffer/LayerDiffsController';
-import { LayerTilesController } from './buffer/LayerTilesController';
-import { PixelBuffer, TransferOptions } from './buffer/PixelBuffer';
+import { DiffsController } from './buffer/DiffsController';
+import { RgbaBuffer, TransferOptions } from './buffer/RgbaBuffer';
+import { TilesController } from './buffer/TilesController';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import { PackedDiffs } from './types/patch/Patch';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
@@ -12,18 +12,18 @@ import type { Point, RGBA, Size, TileIndex } from './types/types';
  * and performance optimization through tile-based management.
  */
 export class Anvil {
-  private buffer: PixelBuffer;
-  private tilesController: LayerTilesController;
-  private diffsController: LayerDiffsController;
+  private buffer: RgbaBuffer;
+  private tilesController: TilesController;
+  private diffsController: DiffsController;
   private readonly tileSize: number;
 
   constructor(width: number, height: number, tileSize = 32) {
     this.tileSize = tileSize;
 
     // Initialize core components
-    this.buffer = new PixelBuffer(width, height);
-    this.tilesController = new LayerTilesController(this.buffer, width, height, tileSize);
-    this.diffsController = new LayerDiffsController();
+    this.buffer = new RgbaBuffer(width, height);
+    this.tilesController = new TilesController(this.buffer, width, height, tileSize);
+    this.diffsController = new DiffsController();
   }
 
   // Basic properties
@@ -314,9 +314,9 @@ export class Anvil {
     // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
       const { boundBox, swapBufferWebp } = patch.partial;
-      const decodedBuffer = PixelBuffer.fromWebp(boundBox.width, boundBox.height, swapBufferWebp);
+      const decodedBuffer = RgbaBuffer.fromWebp(boundBox.width, boundBox.height, swapBufferWebp);
       const currentPartial = this.getPartialBuffer(boundBox);
-      const currentBuffer = PixelBuffer.fromRaw(boundBox.width, boundBox.height, currentPartial).exportWebp();
+      const currentBuffer = RgbaBuffer.fromRaw(boundBox.width, boundBox.height, currentPartial).exportWebp();
       this.setPartialBuffer(boundBox, new Uint8ClampedArray(decodedBuffer.data));
       // Update the patch to contain the previous buffer content for next swap
       patch.partial.swapBufferWebp = currentBuffer;

@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LayerTilesController } from '../src/buffer/LayerTilesController';
-import { PixelBuffer } from '../src/buffer/PixelBuffer';
+import { RgbaBuffer } from '../src/buffer/RgbaBuffer';
+import { TilesController } from '../src/buffer/TilesController';
 import type { RGBA, TileIndex } from '../src/types/types';
 
-describe('LayerTilesController', () => {
-  let buffer: PixelBuffer;
-  let controller: LayerTilesController;
+describe('TilesController', () => {
+  let buffer: RgbaBuffer;
+  let controller: TilesController;
   const tileSize = 32;
   const bufferWidth = 128; // 4 tiles wide
   const bufferHeight = 96; // 3 tiles high
 
   beforeEach(() => {
-    buffer = new PixelBuffer(bufferWidth, bufferHeight);
-    controller = new LayerTilesController(buffer, bufferWidth, bufferHeight, tileSize);
+    buffer = new RgbaBuffer(bufferWidth, bufferHeight);
+    controller = new TilesController(buffer, bufferWidth, bufferHeight, tileSize);
   });
 
-  describe('LayerTilesController Model', () => {
+  describe('TilesController Model', () => {
     it('should calculate tile grid correctly', () => {
       expect(controller.getCols()).toBe(4); // 128 / 32
       expect(controller.getRows()).toBe(3); // 96 / 32
@@ -89,7 +89,7 @@ describe('LayerTilesController', () => {
     });
   });
 
-  describe('LayerTilesController Operations', () => {
+  describe('TilesController Operations', () => {
     it('should get tile bounds correctly', () => {
       const bounds = controller.getTileBounds({ row: 1, col: 2 });
 
@@ -132,8 +132,8 @@ describe('LayerTilesController', () => {
 
     it('should handle partial tiles at edges', () => {
       // Create buffer that doesn't align perfectly with tile size
-      const smallBuffer = new PixelBuffer(50, 50); // 1.56 tiles in each dimension
-      const smallController = new LayerTilesController(smallBuffer, 50, 50, 32);
+      const smallBuffer = new RgbaBuffer(50, 50); // 1.56 tiles in each dimension
+      const smallController = new TilesController(smallBuffer, 50, 50, 32);
 
       expect(smallController.getCols()).toBe(2); // ceil(50/32)
       expect(smallController.getRows()).toBe(2); // ceil(50/32)
