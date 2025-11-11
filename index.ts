@@ -1,5 +1,8 @@
 // Public API exports for @sledge/anvil
+export type { PackedPartialPatchData, PartialPatchData } from './src/types/patch/partial.js';
 export type { PackedDiffs, PatchMetadata } from './src/types/patch/Patch.js';
+export type { PackedPixelPatchData, PixelPatchData } from './src/types/patch/pixel.js';
+export type { PackedWholePatchData, WholePatchData } from './src/types/patch/whole.js';
 export { toUint8Array, toUint8ClampedArray } from './src/types/rawBuffer.js';
 export type { RawPixelData } from './src/types/rawBuffer.js';
 export type { Point, RGBA, Size, TileBounds, TileIndex, TileInfo } from './src/types/types.js';
