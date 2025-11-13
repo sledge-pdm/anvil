@@ -3,11 +3,6 @@
 export const memory: WebAssembly.Memory;
 export const scanline_flood_fill: (a: number, b: number, c: any, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number) => number;
 export const scanline_flood_fill_with_mask: (a: number, b: number, c: any, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number, p: number) => number;
-export const raw_to_webp: (a: number, b: number, c: number, d: number) => [number, number];
-export const webp_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
-export const raw_to_png: (a: number, b: number, c: number, d: number) => [number, number];
-export const png_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
-export const resize: (a: number, b: number, c: any, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => [number, number];
 export const __wbg_patchbufferrgbaoption_free: (a: number, b: number) => void;
 export const __wbg_get_patchbufferrgbaoption_antialias_mode: (a: number) => number;
 export const __wbg_set_patchbufferrgbaoption_antialias_mode: (a: number, b: number) => void;
@@ -18,6 +13,11 @@ export const __wbg_set_patchbufferrgbaoption_flip_y: (a: number, b: number) => v
 export const patchbufferrgbaoption_new: (a: number, b: number, c: number) => number;
 export const patch_buffer_rgba: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => [number, number];
 export const patch_buffer_rgba_instant: (a: number, b: number, c: any, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number, n: number, o: number) => void;
+export const raw_to_webp: (a: number, b: number, c: number, d: number) => [number, number];
+export const webp_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
+export const raw_to_png: (a: number, b: number, c: number, d: number) => [number, number];
+export const png_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
+export const resize: (a: number, b: number, c: any, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number) => [number, number];
 export const __wbg_rgbabuffer_free: (a: number, b: number) => void;
 export const rgbabuffer_new: (a: number, b: number) => number;
 export const rgbabuffer_width: (a: number) => number;

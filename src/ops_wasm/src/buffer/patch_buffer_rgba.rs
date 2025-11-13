@@ -85,8 +85,10 @@ fn sample_nearest(
     src_w: i32,
     src_h: i32,
 ) -> (f32, f32, f32, f32) {
-    let x = src_x.round() as i32;
-    let y = src_y.round() as i32;
+    let mut x = src_x.floor() as i32;
+    let mut y = src_y.floor() as i32;
+    x = x.clamp(0, src_w - 1);
+    y = y.clamp(0, src_h - 1);
     sample_pixel(patch, x, y, src_w, src_h)
 }
 
