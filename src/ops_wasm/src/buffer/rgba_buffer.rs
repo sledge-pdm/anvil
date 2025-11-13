@@ -194,6 +194,7 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = floodFill)]
+    #[allow(clippy::too_many_arguments)]
     pub fn flood_fill(
         &mut self,
         start_x: u32,
@@ -219,6 +220,7 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = floodFillWithMask)]
+    #[allow(clippy::too_many_arguments)]
     pub fn flood_fill_with_mask(
         &mut self,
         start_x: u32,
@@ -248,6 +250,7 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = blitFromRaw)]
+    #[allow(clippy::too_many_arguments)]
     pub fn blit_from_raw(
         &mut self,
         source: &[u8],
@@ -287,6 +290,7 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = blitFromBuffer)]
+    #[allow(clippy::too_many_arguments)]
     pub fn blit_from_buffer(
         &mut self,
         source: &RgbaBuffer,
