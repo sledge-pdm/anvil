@@ -217,8 +217,6 @@ impl RgbaBuffer {
         fill_mask_area(
             &mut self.data,
             mask,
-            self.width,
-            self.height,
             fill_color_r,
             fill_color_g,
             fill_color_b,

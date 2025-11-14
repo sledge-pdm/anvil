@@ -68,7 +68,7 @@ export function resize(buffer: Uint8Array, old_width: number, old_height: number
 export function invert(pixels: Uint8Array, width: number, height: number): void;
 export function patch_buffer_rgba(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, options: PatchBufferRgbaOption): Uint8Array;
 export function patch_buffer_rgba_instant(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, scale_x: number, scale_y: number, rotate_deg: number, options: PatchBufferRgbaOption): void;
-export function fill_mask_area(buffer: Uint8Array, mask: Uint8Array, width: number, height: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number): boolean;
+export function fill_mask_area(buffer: Uint8Array, mask: Uint8Array, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number): boolean;
 export enum AlphaBlurMode {
   /**
    * Skip alpha channel (preserve original alpha values)

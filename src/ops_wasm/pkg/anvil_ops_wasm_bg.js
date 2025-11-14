@@ -470,20 +470,18 @@ export function patch_buffer_rgba_instant(target, target_width, target_height, p
 /**
  * @param {Uint8Array} buffer
  * @param {Uint8Array} mask
- * @param {number} width
- * @param {number} height
  * @param {number} fill_color_r
  * @param {number} fill_color_g
  * @param {number} fill_color_b
  * @param {number} fill_color_a
  * @returns {boolean}
  */
-export function fill_mask_area(buffer, mask, width, height, fill_color_r, fill_color_g, fill_color_b, fill_color_a) {
+export function fill_mask_area(buffer, mask, fill_color_r, fill_color_g, fill_color_b, fill_color_a) {
     var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
     var len0 = WASM_VECTOR_LEN;
     const ptr1 = passArray8ToWasm0(mask, wasm.__wbindgen_malloc);
     const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.fill_mask_area(ptr0, len0, buffer, ptr1, len1, width, height, fill_color_r, fill_color_g, fill_color_b, fill_color_a);
+    const ret = wasm.fill_mask_area(ptr0, len0, buffer, ptr1, len1, fill_color_r, fill_color_g, fill_color_b, fill_color_a);
     return ret !== 0;
 }
 
