@@ -13,11 +13,6 @@ function getUint8ArrayMemory0() {
     return cachedUint8ArrayMemory0;
 }
 
-function getArrayU8FromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
-}
-
 let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
 
 cachedTextDecoder.decode();
@@ -39,6 +34,11 @@ function getStringFromWasm0(ptr, len) {
     return decodeText(ptr, len);
 }
 
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
+
 let WASM_VECTOR_LEN = 0;
 
 function passArray8ToWasm0(arg, malloc) {
@@ -47,6 +47,65 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
+
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+}
+/**
+ * Apply brightness and contrast adjustments to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {BrightnessContrastOption} options
+ */
+export function brightness_contrast(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, BrightnessContrastOption);
+    wasm.brightness_contrast(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply only brightness adjustment to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} brightness
+ */
+export function brightness(pixels, width, height, brightness) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.brightness(ptr0, len0, pixels, width, height, brightness);
+}
+
+/**
+ * Apply only contrast adjustment to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} contrast
+ */
+export function contrast(pixels, width, height, contrast) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.contrast(ptr0, len0, pixels, width, height, contrast);
+}
+
+/**
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {GaussianBlurOption} options
+ */
+export function gaussian_blur(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, GaussianBlurOption);
+    wasm.gaussian_blur(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
 /**
  * スキャンライン方式のFloodFill実装
  *
@@ -152,11 +211,17 @@ export function scanline_flood_fill_with_mask(buffer, width, height, start_x, st
     return ret !== 0;
 }
 
-function _assertClass(instance, klass) {
-    if (!(instance instanceof klass)) {
-        throw new Error(`expected instance of ${klass.name}`);
-    }
+/**
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ */
+export function invert(pixels, width, height) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.invert(ptr0, len0, pixels, width, height);
 }
+
 /**
  * @param {Uint8Array} target
  * @param {number} target_width
@@ -202,6 +267,91 @@ export function patch_buffer_rgba_instant(target, target_width, target_height, p
     const len1 = WASM_VECTOR_LEN;
     _assertClass(options, PatchBufferRgbaOption);
     wasm.patch_buffer_rgba_instant(ptr0, len0, target, target_width, target_height, ptr1, len1, patch_width, patch_height, offset_x, offset_y, scale_x, scale_y, rotate_deg, options.__wbg_ptr);
+}
+
+/**
+ * Apply dithering effect to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {DitheringOption} options
+ */
+export function dithering(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, DitheringOption);
+    wasm.dithering(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply random dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_random(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_random(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * Apply error diffusion dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_error_diffusion(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_error_diffusion(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * Apply ordered dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_ordered(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_ordered(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ */
+export function grayscale(pixels, width, height) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.grayscale(ptr0, len0, pixels, width, height);
+}
+
+/**
+ * @param {Uint8Array} buffer
+ * @param {number} old_width
+ * @param {number} old_height
+ * @param {number} new_width
+ * @param {number} new_height
+ * @param {number} src_origin_x
+ * @param {number} src_origin_y
+ * @param {number} dest_origin_x
+ * @param {number} dest_origin_y
+ * @returns {Uint8Array}
+ */
+export function resize(buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y) {
+    var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    const ret = wasm.resize(ptr0, len0, buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
 }
 
 /**
@@ -265,26 +415,72 @@ export function png_to_raw(png_buffer, _width, _height) {
 }
 
 /**
- * @param {Uint8Array} buffer
- * @param {number} old_width
- * @param {number} old_height
- * @param {number} new_width
- * @param {number} new_height
- * @param {number} src_origin_x
- * @param {number} src_origin_y
- * @param {number} dest_origin_x
- * @param {number} dest_origin_y
- * @returns {Uint8Array}
+ * Remove small isolated pixel groups (dust removal)
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {DustRemovalOption} options
  */
-export function resize(buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y) {
-    var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+export function dust_removal(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
     var len0 = WASM_VECTOR_LEN;
-    const ret = wasm.resize(ptr0, len0, buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
+    _assertClass(options, DustRemovalOption);
+    wasm.dust_removal(ptr0, len0, pixels, width, height, options.__wbg_ptr);
 }
 
+/**
+ * Remove small isolated pixel groups with default settings
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} max_size
+ */
+export function dust_removal_simple(pixels, width, height, max_size) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dust_removal_simple(ptr0, len0, pixels, width, height, max_size);
+}
+
+/**
+ * Apply posterize effect to reduce the number of color levels
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {PosterizeOption} options
+ */
+export function posterize(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, PosterizeOption);
+    wasm.posterize(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply posterize effect with simple level parameter
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function posterize_simple(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.posterize_simple(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * @enum {0 | 1}
+ */
+export const AlphaBlurMode = Object.freeze({
+    /**
+     * Skip alpha channel (preserve original alpha values)
+     */
+    Skip: 0, "0": "Skip",
+    /**
+     * Apply blur to alpha channel as well
+     */
+    Blur: 1, "1": "Blur",
+});
 /**
  * @enum {0 | 1 | 2}
  */
@@ -293,6 +489,279 @@ export const AntialiasMode = Object.freeze({
     Bilinear: 1, "1": "Bilinear",
     Bicubic: 2, "2": "Bicubic",
 });
+/**
+ * @enum {0 | 1 | 2}
+ */
+export const DitheringMode = Object.freeze({
+    /**
+     * Random dithering (white noise)
+     */
+    Random: 0, "0": "Random",
+    /**
+     * Floyd-Steinberg error diffusion
+     */
+    ErrorDiffusion: 1, "1": "ErrorDiffusion",
+    /**
+     * Ordered dithering using Bayer matrix
+     */
+    Ordered: 2, "2": "Ordered",
+});
+
+const BrightnessContrastOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_brightnesscontrastoption_free(ptr >>> 0, 1));
+
+export class BrightnessContrastOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        BrightnessContrastOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_brightnesscontrastoption_free(ptr, 0);
+    }
+    /**
+     * Brightness adjustment (-100.0 to 100.0, 0.0 = no change)
+     * @returns {number}
+     */
+    get brightness() {
+        const ret = wasm.__wbg_get_brightnesscontrastoption_brightness(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Brightness adjustment (-100.0 to 100.0, 0.0 = no change)
+     * @param {number} arg0
+     */
+    set brightness(arg0) {
+        wasm.__wbg_set_brightnesscontrastoption_brightness(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Contrast adjustment (-100.0 to 100.0, 0.0 = no change)
+     * @returns {number}
+     */
+    get contrast() {
+        const ret = wasm.__wbg_get_brightnesscontrastoption_contrast(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Contrast adjustment (-100.0 to 100.0, 0.0 = no change)
+     * @param {number} arg0
+     */
+    set contrast(arg0) {
+        wasm.__wbg_set_brightnesscontrastoption_contrast(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} brightness
+     * @param {number} contrast
+     */
+    constructor(brightness, contrast) {
+        const ret = wasm.brightnesscontrastoption_new(brightness, contrast);
+        this.__wbg_ptr = ret >>> 0;
+        BrightnessContrastOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) BrightnessContrastOption.prototype[Symbol.dispose] = BrightnessContrastOption.prototype.free;
+
+const DitheringOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_ditheringoption_free(ptr >>> 0, 1));
+
+export class DitheringOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        DitheringOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_ditheringoption_free(ptr, 0);
+    }
+    /**
+     * Dithering mode to use
+     * @returns {DitheringMode}
+     */
+    get mode() {
+        const ret = wasm.__wbg_get_ditheringoption_mode(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Dithering mode to use
+     * @param {DitheringMode} arg0
+     */
+    set mode(arg0) {
+        wasm.__wbg_set_ditheringoption_mode(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Number of levels per channel (2-32, affects quantization)
+     * @returns {number}
+     */
+    get levels() {
+        const ret = wasm.__wbg_get_ditheringoption_levels(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Number of levels per channel (2-32, affects quantization)
+     * @param {number} arg0
+     */
+    set levels(arg0) {
+        wasm.__wbg_set_ditheringoption_levels(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Strength of dithering effect (0.0-1.0)
+     * @returns {number}
+     */
+    get strength() {
+        const ret = wasm.__wbg_get_ditheringoption_strength(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Strength of dithering effect (0.0-1.0)
+     * @param {number} arg0
+     */
+    set strength(arg0) {
+        wasm.__wbg_set_ditheringoption_strength(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {DitheringMode} mode
+     * @param {number} levels
+     * @param {number} strength
+     */
+    constructor(mode, levels, strength) {
+        const ret = wasm.ditheringoption_new(mode, levels, strength);
+        this.__wbg_ptr = ret >>> 0;
+        DitheringOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) DitheringOption.prototype[Symbol.dispose] = DitheringOption.prototype.free;
+
+const DustRemovalOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_dustremovaloption_free(ptr >>> 0, 1));
+
+export class DustRemovalOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        DustRemovalOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_dustremovaloption_free(ptr, 0);
+    }
+    /**
+     * Maximum size of pixel groups to remove (1-100, groups with this many pixels or fewer will be removed)
+     * @returns {number}
+     */
+    get max_size() {
+        const ret = wasm.__wbg_get_dustremovaloption_max_size(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Maximum size of pixel groups to remove (1-100, groups with this many pixels or fewer will be removed)
+     * @param {number} arg0
+     */
+    set max_size(arg0) {
+        wasm.__wbg_set_dustremovaloption_max_size(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Minimum alpha threshold to consider a pixel as non-transparent (0-255)
+     * @returns {number}
+     */
+    get alpha_threshold() {
+        const ret = wasm.__wbg_get_dustremovaloption_alpha_threshold(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Minimum alpha threshold to consider a pixel as non-transparent (0-255)
+     * @param {number} arg0
+     */
+    set alpha_threshold(arg0) {
+        wasm.__wbg_set_dustremovaloption_alpha_threshold(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} max_size
+     * @param {number} alpha_threshold
+     */
+    constructor(max_size, alpha_threshold) {
+        const ret = wasm.dustremovaloption_new(max_size, alpha_threshold);
+        this.__wbg_ptr = ret >>> 0;
+        DustRemovalOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) DustRemovalOption.prototype[Symbol.dispose] = DustRemovalOption.prototype.free;
+
+const GaussianBlurOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_gaussianbluroption_free(ptr >>> 0, 1));
+
+export class GaussianBlurOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        GaussianBlurOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_gaussianbluroption_free(ptr, 0);
+    }
+    /**
+     * Blur radius (higher values create stronger blur effect)
+     * @returns {number}
+     */
+    get radius() {
+        const ret = wasm.__wbg_get_gaussianbluroption_radius(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * Blur radius (higher values create stronger blur effect)
+     * @param {number} arg0
+     */
+    set radius(arg0) {
+        wasm.__wbg_set_gaussianbluroption_radius(this.__wbg_ptr, arg0);
+    }
+    /**
+     * How to handle the alpha channel
+     * @returns {AlphaBlurMode}
+     */
+    get alpha_mode() {
+        const ret = wasm.__wbg_get_gaussianbluroption_alpha_mode(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * How to handle the alpha channel
+     * @param {AlphaBlurMode} arg0
+     */
+    set alpha_mode(arg0) {
+        wasm.__wbg_set_gaussianbluroption_alpha_mode(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} radius
+     * @param {AlphaBlurMode} alpha_mode
+     */
+    constructor(radius, alpha_mode) {
+        const ret = wasm.gaussianbluroption_new(radius, alpha_mode);
+        this.__wbg_ptr = ret >>> 0;
+        GaussianBlurOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) GaussianBlurOption.prototype[Symbol.dispose] = GaussianBlurOption.prototype.free;
 
 const PatchBufferRgbaOptionFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
@@ -363,6 +832,50 @@ export class PatchBufferRgbaOption {
     }
 }
 if (Symbol.dispose) PatchBufferRgbaOption.prototype[Symbol.dispose] = PatchBufferRgbaOption.prototype.free;
+
+const PosterizeOptionFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_posterizeoption_free(ptr >>> 0, 1));
+
+export class PosterizeOption {
+
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        PosterizeOptionFinalization.unregister(this);
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_posterizeoption_free(ptr, 0);
+    }
+    /**
+     * Number of levels per channel (1-32, higher values preserve more detail)
+     * @returns {number}
+     */
+    get levels() {
+        const ret = wasm.__wbg_get_dustremovaloption_max_size(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Number of levels per channel (1-32, higher values preserve more detail)
+     * @param {number} arg0
+     */
+    set levels(arg0) {
+        wasm.__wbg_set_dustremovaloption_max_size(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} levels
+     */
+    constructor(levels) {
+        const ret = wasm.posterizeoption_new(levels);
+        this.__wbg_ptr = ret >>> 0;
+        PosterizeOptionFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+}
+if (Symbol.dispose) PosterizeOption.prototype[Symbol.dispose] = PosterizeOption.prototype.free;
 
 const RgbaBufferFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
@@ -597,8 +1110,53 @@ export class RgbaBuffer {
         wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
         return v2;
     }
+    /**
+     * @param {number} brightness
+     * @param {number} contrast
+     */
+    brightnessAndContrast(brightness, contrast) {
+        wasm.rgbabuffer_brightnessAndContrast(this.__wbg_ptr, brightness, contrast);
+    }
+    invert() {
+        wasm.rgbabuffer_invert(this.__wbg_ptr);
+    }
+    grayscale() {
+        wasm.rgbabuffer_grayscale(this.__wbg_ptr);
+    }
+    /**
+     * @param {number} radius
+     * @param {AlphaBlurMode} alpha_mode
+     */
+    gaussianBlur(radius, alpha_mode) {
+        wasm.rgbabuffer_gaussianBlur(this.__wbg_ptr, radius, alpha_mode);
+    }
+    /**
+     * @param {number} levels
+     */
+    posterize(levels) {
+        wasm.rgbabuffer_posterize(this.__wbg_ptr, levels);
+    }
+    /**
+     * @param {number} max_size
+     * @param {number} alpha_threshold
+     */
+    dustRemoval(max_size, alpha_threshold) {
+        wasm.rgbabuffer_dustRemoval(this.__wbg_ptr, max_size, alpha_threshold);
+    }
+    /**
+     * @param {DitheringMode} mode
+     * @param {number} levels
+     * @param {number} strength
+     */
+    dithering(mode, levels, strength) {
+        wasm.rgbabuffer_dithering(this.__wbg_ptr, mode, levels, strength);
+    }
 }
 if (Symbol.dispose) RgbaBuffer.prototype[Symbol.dispose] = RgbaBuffer.prototype.free;
+
+export function __wbg_log_d59abd2680399146(arg0, arg1) {
+    console.log(getStringFromWasm0(arg0, arg1));
+};
 
 export function __wbg_wbindgencopytotypedarray_d105febdb9374ca3(arg0, arg1, arg2) {
     new Uint8Array(arg2.buffer, arg2.byteOffset, arg2.byteLength).set(getArrayU8FromWasm0(arg0, arg1));

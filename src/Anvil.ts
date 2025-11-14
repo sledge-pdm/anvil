@@ -3,6 +3,7 @@ import { RgbaBuffer, TransferOptions } from './buffer/RgbaBuffer';
 import { TilesController } from './buffer/TilesController';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import { PackedDiffs } from './types/patch/Patch';
+import { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
@@ -193,6 +194,16 @@ export class Anvil {
     return this.buffer.data;
   }
 
+  /**
+   * Apply an effect that mutates the whole buffer while automatically capturing history.
+   * Consumers just provide the mutator – this handles diff registration & dirty tiles.
+   */
+  applyWholeBufferEffect(effect: (buffer: RgbaBuffer) => void): void {
+    // Capture the current buffer state for undo/redo before mutating it
+    this.addWholeDiff(this.buffer.data);
+    effect(this.buffer);
+  }
+
   getTileSize(): number {
     return this.tileSize;
   }
@@ -250,12 +261,26 @@ export class Anvil {
   }
 
   /**
+   * @deprecated addWholeDiff should be replaced to this addCurrentWholeDiff.
    * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
    */
   addWholeDiff(swapBuffer: RawPixelData): void {
-    const clampedSwap = toUint8ClampedArray(swapBuffer);
+    const clampedSwap = new Uint8ClampedArray(toUint8ClampedArray(swapBuffer));
     this.diffsController.addWhole({ swapBuffer: clampedSwap, width: this.getWidth(), height: this.getHeight() });
+    this.tilesController.setAllDirty();
+  }
+
+  // addWholeDiff needed swapBuffer that refers to buffer before change,
+  // but in swap method, calling it before change just means "save current buffer as swapBuffer".
+  // so, addWholeDiff should be replaced to this addCurrentWholeDiff that captures current buffer as swapBuffer and immediately pack whole diff.
+  addCurrentWholeDiff(): void {
+    const currentPacked: PackedWholePatchData = {
+      swapBufferWebp: this.buffer.exportWebp(),
+      width: this.getWidth(),
+      height: this.getHeight(),
+    };
+    this.diffsController.addWholePacked(currentPacked);
     this.tilesController.setAllDirty();
   }
 

@@ -1,4 +1,4 @@
-import { AntialiasMode, RgbaBuffer as WASMRgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
+import { AlphaBlurMode, AntialiasMode, DitheringMode, RgbaBuffer as WASMRgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
 import type { RawPixelData } from '../types/rawBuffer.js';
 import { toUint8Array, toUint8ClampedArray } from '../types/rawBuffer.js';
 import type { Point, RGBA, Size } from '../types/types.js';
@@ -76,6 +76,18 @@ export class RgbaBuffer {
   }
 
   /**
+   * Get pixel color at raw buffer index (length-checked)
+   */
+  indexGet(idx: number): RGBA {
+    if (0 < idx || idx >= this.data.length - 4) {
+      return [0, 0, 0, 0];
+    }
+
+    const data = this.data;
+    return [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+  }
+
+  /**
    * Set pixel color at coordinates (bounds-checked)
    * Returns true if pixel was actually changed
    */
@@ -85,6 +97,28 @@ export class RgbaBuffer {
     }
 
     const idx = (y * this.width + x) * 4;
+    const data = this.data;
+    const changed = data[idx] !== color[0] || data[idx + 1] !== color[1] || data[idx + 2] !== color[2] || data[idx + 3] !== color[3];
+
+    if (changed) {
+      data[idx] = color[0];
+      data[idx + 1] = color[1];
+      data[idx + 2] = color[2];
+      data[idx + 3] = color[3];
+    }
+
+    return changed;
+  }
+
+  /**
+   * Set pixel color at raw buffer index
+   * Returns true if pixel was actually changed
+   */
+  indexSet(idx: number, color: RGBA): boolean {
+    if (0 < idx || idx >= this.data.length - 4) {
+      return false;
+    }
+
     const data = this.data;
     const changed = data[idx] !== color[0] || data[idx + 1] !== color[1] || data[idx + 2] !== color[2] || data[idx + 3] !== color[3];
 
@@ -257,6 +291,41 @@ export class RgbaBuffer {
     const maskView = toUint8Array(mask);
     const data = this.wasmBuffer.cropWithMask(maskView, maskWidth, maskHeight, options?.offsetX ?? 0, options?.offsetY ?? 0);
     return new Uint8ClampedArray(data.buffer);
+  }
+
+  invert(): void {
+    this.wasmBuffer.invert();
+    this.refreshDataView();
+  }
+
+  grayscale(): void {
+    this.wasmBuffer.grayscale();
+    this.refreshDataView();
+  }
+
+  gaussianBlur(radius: number, alphaMode: AlphaBlurMode): void {
+    this.wasmBuffer.gaussianBlur(radius, alphaMode);
+    this.refreshDataView();
+  }
+
+  posterize(levels: number): void {
+    this.wasmBuffer.posterize(levels);
+    this.refreshDataView();
+  }
+
+  dustRemoval(maxSize: number, alphaThreshold: number): void {
+    this.wasmBuffer.dustRemoval(maxSize, alphaThreshold);
+    this.refreshDataView();
+  }
+
+  dithering(mode: DitheringMode, levels: number, strength: number): void {
+    this.wasmBuffer.dithering(mode, levels, strength);
+    this.refreshDataView();
+  }
+
+  brightnessAndContrast(brightness: number, contrast: number): void {
+    this.wasmBuffer.brightnessAndContrast(brightness, contrast);
+    this.refreshDataView();
   }
 }
 

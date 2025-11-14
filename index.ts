@@ -30,5 +30,5 @@ export {
 } from './src/ops/Packing.js';
 export { putShape, putShapeLine, type ShapeMask } from './src/ops/Shape.js';
 
-// WASM enum
-export { AntialiasMode } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
+// WASM enums
+export { AlphaBlurMode, AntialiasMode, DitheringMode } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
