@@ -218,6 +218,10 @@ export class RgbaBuffer {
     return ok;
   }
 
+  fillMaskArea(mask: Uint8Array, color: RGBA) {
+    return this.wasmBuffer.fillMaskArea(mask, color[0], color[1], color[2], color[3]);
+  }
+
   floodFill(
     startX: number,
     startY: number,

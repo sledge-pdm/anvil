@@ -152,7 +152,6 @@ export class Anvil {
   getPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }): Uint8ClampedArray {
     const { x, y, width: w, height: h } = boundBox;
     const result = new Uint8ClampedArray(w * h * 4);
-
     if (w > 0 && h > 0) {
       const buf = this.getBufferPointer();
       if (buf) {
@@ -237,6 +236,10 @@ export class Anvil {
     this.tilesController.resize(newWidth, newHeight);
     this.tilesController.setAllDirty();
     this.diffsController.discard();
+  }
+
+  fillWithMaskArea(args: { mask: Uint8Array; color: RGBA }): boolean {
+    return this.buffer.fillMaskArea(args.mask, args.color);
   }
 
   floodFill(args: {

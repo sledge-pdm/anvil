@@ -12,7 +12,10 @@ use crate::{
         packing::{png_to_raw, raw_to_png, raw_to_webp, webp_to_raw},
         patch_buffer_rgba::{patch_buffer_rgba_instant, AntialiasMode, PatchBufferRgbaOption},
     },
-    fill::{scanline_flood_fill, scanline_flood_fill_with_mask},
+    fill::{
+        area_fill::fill_mask_area,
+        flood_fill::{scanline_flood_fill, scanline_flood_fill_with_mask},
+    },
 };
 use js_sys::Uint8ClampedArray;
 use wasm_bindgen::prelude::*;
@@ -200,6 +203,27 @@ impl RgbaBuffer {
         self.data.truncate(new_len);
         self.width = new_width;
         self.height = new_height;
+    }
+
+    #[wasm_bindgen(js_name = fillMaskArea)]
+    pub fn fill_mask_area(
+        &mut self,
+        mask: &[u8],
+        fill_color_r: u8,
+        fill_color_g: u8,
+        fill_color_b: u8,
+        fill_color_a: u8,
+    ) -> bool {
+        fill_mask_area(
+            &mut self.data,
+            mask,
+            self.width,
+            self.height,
+            fill_color_r,
+            fill_color_g,
+            fill_color_b,
+            fill_color_a,
+        )
     }
 
     #[wasm_bindgen(js_name = floodFill)]

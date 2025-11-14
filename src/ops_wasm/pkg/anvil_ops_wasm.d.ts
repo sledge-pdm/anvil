@@ -1,5 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
+export function raw_to_webp(buffer: Uint8Array, width: number, height: number): Uint8Array;
+export function webp_to_raw(webp_buffer: Uint8Array, width: number, height: number): Uint8Array;
+export function raw_to_png(buffer: Uint8Array, width: number, height: number): Uint8Array;
+export function png_to_raw(png_buffer: Uint8Array, _width: number, _height: number): Uint8Array;
 /**
  * Apply brightness and contrast adjustments to the image
  */
@@ -27,9 +31,22 @@ export function scanline_flood_fill(buffer: Uint8Array, width: number, height: n
  * 選択範囲制限付きスキャンライン FloodFill
  */
 export function scanline_flood_fill_with_mask(buffer: Uint8Array, width: number, height: number, start_x: number, start_y: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number, threshold: number, selection_mask: Uint8Array, limit_mode: string): boolean;
-export function invert(pixels: Uint8Array, width: number, height: number): void;
-export function patch_buffer_rgba(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, options: PatchBufferRgbaOption): Uint8Array;
-export function patch_buffer_rgba_instant(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, scale_x: number, scale_y: number, rotate_deg: number, options: PatchBufferRgbaOption): void;
+/**
+ * Remove small isolated pixel groups (dust removal)
+ */
+export function dust_removal(pixels: Uint8Array, width: number, height: number, options: DustRemovalOption): void;
+/**
+ * Remove small isolated pixel groups with default settings
+ */
+export function dust_removal_simple(pixels: Uint8Array, width: number, height: number, max_size: number): void;
+/**
+ * Apply posterize effect to reduce the number of color levels
+ */
+export function posterize(pixels: Uint8Array, width: number, height: number, options: PosterizeOption): void;
+/**
+ * Apply posterize effect with simple level parameter
+ */
+export function posterize_simple(pixels: Uint8Array, width: number, height: number, levels: number): void;
 /**
  * Apply dithering effect to the image
  */
@@ -48,26 +65,10 @@ export function dithering_error_diffusion(pixels: Uint8Array, width: number, hei
 export function dithering_ordered(pixels: Uint8Array, width: number, height: number, levels: number): void;
 export function grayscale(pixels: Uint8Array, width: number, height: number): void;
 export function resize(buffer: Uint8Array, old_width: number, old_height: number, new_width: number, new_height: number, src_origin_x: number, src_origin_y: number, dest_origin_x: number, dest_origin_y: number): Uint8Array;
-export function raw_to_webp(buffer: Uint8Array, width: number, height: number): Uint8Array;
-export function webp_to_raw(webp_buffer: Uint8Array, width: number, height: number): Uint8Array;
-export function raw_to_png(buffer: Uint8Array, width: number, height: number): Uint8Array;
-export function png_to_raw(png_buffer: Uint8Array, _width: number, _height: number): Uint8Array;
-/**
- * Remove small isolated pixel groups (dust removal)
- */
-export function dust_removal(pixels: Uint8Array, width: number, height: number, options: DustRemovalOption): void;
-/**
- * Remove small isolated pixel groups with default settings
- */
-export function dust_removal_simple(pixels: Uint8Array, width: number, height: number, max_size: number): void;
-/**
- * Apply posterize effect to reduce the number of color levels
- */
-export function posterize(pixels: Uint8Array, width: number, height: number, options: PosterizeOption): void;
-/**
- * Apply posterize effect with simple level parameter
- */
-export function posterize_simple(pixels: Uint8Array, width: number, height: number, levels: number): void;
+export function invert(pixels: Uint8Array, width: number, height: number): void;
+export function patch_buffer_rgba(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, options: PatchBufferRgbaOption): Uint8Array;
+export function patch_buffer_rgba_instant(target: Uint8Array, target_width: number, target_height: number, patch: Uint8Array, patch_width: number, patch_height: number, offset_x: number, offset_y: number, scale_x: number, scale_y: number, rotate_deg: number, options: PatchBufferRgbaOption): void;
+export function fill_mask_area(buffer: Uint8Array, mask: Uint8Array, width: number, height: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number): boolean;
 export enum AlphaBlurMode {
   /**
    * Skip alpha channel (preserve original alpha values)
@@ -186,6 +187,7 @@ export class RgbaBuffer {
   importWebp(webp_buffer: Uint8Array, width: number, height: number): boolean;
   importPng(png_buffer: Uint8Array, width: number, height: number): boolean;
   resize_instant(new_width: number, new_height: number, src_origin_x: number, src_origin_y: number, dest_origin_x: number, dest_origin_y: number): void;
+  fillMaskArea(mask: Uint8Array, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number): boolean;
   floodFill(start_x: number, start_y: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number, threshold: number): boolean;
   floodFillWithMask(start_x: number, start_y: number, fill_color_r: number, fill_color_g: number, fill_color_b: number, fill_color_a: number, threshold: number, selection_mask: Uint8Array, limit_mode: string): boolean;
   blitFromRaw(source: Uint8Array, source_width: number, source_height: number, offset_x: number, offset_y: number, scale_x: number, scale_y: number, rotate_deg: number, antialias_mode: AntialiasMode, flip_x: boolean, flip_y: boolean): void;

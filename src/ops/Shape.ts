@@ -251,10 +251,9 @@ export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | unde
 
   // 4. マスク適用
   let diffs: PixelPatchData[] | undefined = manualDiff ? [] : undefined;
-  const buf = opts.anvil.getBufferPointer();
+  const buf = opts.anvil.getBufferHandle();
   const color = opts.color;
   const filter = opts.filter;
-  const canvasW = targetW;
 
   for (let localY = 0; localY < maskH; localY++) {
     const gy = clipMinY + localY;
@@ -264,12 +263,8 @@ export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | unde
       const gx = clipMinX + localX;
       if (filter && !filter(gx, gy)) continue;
       if (manualDiff) {
-        const before = opts.anvil.getPixel(gx, gy) as RGBA;
-        const ti = (gx + gy * canvasW) * 4;
-        buf[ti] = color[0];
-        buf[ti + 1] = color[1];
-        buf[ti + 2] = color[2];
-        buf[ti + 3] = color[3];
+        const before = buf.get(gx, gy) as RGBA;
+        buf.set(gx, gy, color);
         diffs!.push({ x: gx, y: gy, color: before });
         opts.anvil.setDirty(gx, gy);
       } else {
