@@ -47,65 +47,6 @@ function passArray8ToWasm0(arg, malloc) {
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
-/**
- * @param {Uint8Array} buffer
- * @param {number} width
- * @param {number} height
- * @returns {Uint8Array}
- */
-export function raw_to_webp(buffer, width, height) {
-    const ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.raw_to_webp(ptr0, len0, width, height);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
-}
-
-/**
- * @param {Uint8Array} webp_buffer
- * @param {number} width
- * @param {number} height
- * @returns {Uint8Array}
- */
-export function webp_to_raw(webp_buffer, width, height) {
-    const ptr0 = passArray8ToWasm0(webp_buffer, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.webp_to_raw(ptr0, len0, width, height);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
-}
-
-/**
- * @param {Uint8Array} buffer
- * @param {number} width
- * @param {number} height
- * @returns {Uint8Array}
- */
-export function raw_to_png(buffer, width, height) {
-    const ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.raw_to_png(ptr0, len0, width, height);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
-}
-
-/**
- * @param {Uint8Array} png_buffer
- * @param {number} _width
- * @param {number} _height
- * @returns {Uint8Array}
- */
-export function png_to_raw(png_buffer, _width, _height) {
-    const ptr0 = passArray8ToWasm0(png_buffer, wasm.__wbindgen_malloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.png_to_raw(ptr0, len0, _width, _height);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
-}
 
 function _assertClass(instance, klass) {
     if (!(instance instanceof klass)) {
@@ -231,6 +172,71 @@ export function scanline_flood_fill_with_mask(buffer, width, height, start_x, st
 }
 
 /**
+ * Remove small isolated pixel groups (dust removal)
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {DustRemovalOption} options
+ */
+export function dust_removal(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, DustRemovalOption);
+    wasm.dust_removal(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Remove small isolated pixel groups with default settings
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} max_size
+ */
+export function dust_removal_simple(pixels, width, height, max_size) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dust_removal_simple(ptr0, len0, pixels, width, height, max_size);
+}
+
+/**
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ */
+export function invert(pixels, width, height) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.invert(ptr0, len0, pixels, width, height);
+}
+
+/**
+ * Apply posterize effect to reduce the number of color levels
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {PosterizeOption} options
+ */
+export function posterize(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, PosterizeOption);
+    wasm.posterize(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply posterize effect with simple level parameter
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function posterize_simple(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.posterize_simple(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
  * @param {Uint8Array} pixels
  * @param {number} width
  * @param {number} height
@@ -304,86 +310,6 @@ export function fill_mask_area(buffer, mask, fill_color_r, fill_color_g, fill_co
     const len1 = WASM_VECTOR_LEN;
     const ret = wasm.fill_mask_area(ptr0, len0, buffer, ptr1, len1, fill_color_r, fill_color_g, fill_color_b, fill_color_a);
     return ret !== 0;
-}
-
-let cachedUint32ArrayMemory0 = null;
-
-function getUint32ArrayMemory0() {
-    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
-        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachedUint32ArrayMemory0;
-}
-
-function passArray32ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 4, 4) >>> 0;
-    getUint32ArrayMemory0().set(arg, ptr / 4);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-/**
- * Remove small isolated pixel groups (dust removal)
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {DustRemovalOption} options
- */
-export function dust_removal(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, DustRemovalOption);
-    wasm.dust_removal(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Remove small isolated pixel groups with default settings
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} max_size
- */
-export function dust_removal_simple(pixels, width, height, max_size) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.dust_removal_simple(ptr0, len0, pixels, width, height, max_size);
-}
-
-/**
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- */
-export function invert(pixels, width, height) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.invert(ptr0, len0, pixels, width, height);
-}
-
-/**
- * Apply posterize effect to reduce the number of color levels
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {PosterizeOption} options
- */
-export function posterize(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, PosterizeOption);
-    wasm.posterize(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Apply posterize effect with simple level parameter
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} levels
- */
-export function posterize_simple(pixels, width, height, levels) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.posterize_simple(ptr0, len0, pixels, width, height, levels);
 }
 
 /**
@@ -479,22 +405,76 @@ export function dithering_ordered(pixels, width, height, levels) {
     wasm.dithering_ordered(ptr0, len0, pixels, width, height, levels);
 }
 
+let cachedUint32ArrayMemory0 = null;
+
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
 /**
  * @param {Uint8Array} buffer
- * @param {number} old_width
- * @param {number} old_height
- * @param {number} new_width
- * @param {number} new_height
- * @param {number} src_origin_x
- * @param {number} src_origin_y
- * @param {number} dest_origin_x
- * @param {number} dest_origin_y
+ * @param {number} width
+ * @param {number} height
  * @returns {Uint8Array}
  */
-export function resize(buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y) {
-    var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    const ret = wasm.resize(ptr0, len0, buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y);
+export function raw_to_webp(buffer, width, height) {
+    const ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.raw_to_webp(ptr0, len0, width, height);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
+}
+
+/**
+ * @param {Uint8Array} webp_buffer
+ * @param {number} width
+ * @param {number} height
+ * @returns {Uint8Array}
+ */
+export function webp_to_raw(webp_buffer, width, height) {
+    const ptr0 = passArray8ToWasm0(webp_buffer, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.webp_to_raw(ptr0, len0, width, height);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
+}
+
+/**
+ * @param {Uint8Array} buffer
+ * @param {number} width
+ * @param {number} height
+ * @returns {Uint8Array}
+ */
+export function raw_to_png(buffer, width, height) {
+    const ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.raw_to_png(ptr0, len0, width, height);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
+}
+
+/**
+ * @param {Uint8Array} png_buffer
+ * @param {number} _width
+ * @param {number} _height
+ * @returns {Uint8Array}
+ */
+export function png_to_raw(png_buffer, _width, _height) {
+    const ptr0 = passArray8ToWasm0(png_buffer, wasm.__wbindgen_malloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.png_to_raw(ptr0, len0, _width, _height);
     var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
     return v2;

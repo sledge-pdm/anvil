@@ -20,6 +20,24 @@ use crate::{
 use js_sys::Uint8ClampedArray;
 use wasm_bindgen::prelude::*;
 
+fn pixel_byte_len(width: u32, height: u32) -> usize {
+    (width as usize)
+        .saturating_mul(height as usize)
+        .saturating_mul(4)
+}
+
+fn mask_pixel_count(mask_width: u32, mask_height: u32) -> usize {
+    (mask_width as usize).saturating_mul(mask_height as usize)
+}
+
+fn mask_is_valid(mask_width: u32, mask_height: u32, mask: &[u8]) -> bool {
+    mask_pixel_count(mask_width, mask_height) <= mask.len()
+}
+
+fn positive_area(width: i32, height: i32) -> bool {
+    width > 0 && height > 0
+}
+
 #[wasm_bindgen]
 pub struct RgbaBuffer {
     width: u32,
@@ -31,7 +49,7 @@ pub struct RgbaBuffer {
 impl RgbaBuffer {
     #[wasm_bindgen(constructor)]
     pub fn new(width: u32, height: u32) -> RgbaBuffer {
-        let size = (width as usize) * (height as usize) * 4;
+        let size = pixel_byte_len(width, height);
         RgbaBuffer {
             width,
             height,
@@ -61,7 +79,7 @@ impl RgbaBuffer {
     }
 
     fn overwrite_with(&mut self, raw: Vec<u8>, width: u32, height: u32) -> bool {
-        let expected = (width as usize) * (height as usize) * 4;
+        let expected = pixel_byte_len(width, height);
         if raw.len() != expected {
             return false;
         }
@@ -70,7 +88,10 @@ impl RgbaBuffer {
         self.data = raw;
         true
     }
+}
 
+#[wasm_bindgen]
+impl RgbaBuffer {
     #[wasm_bindgen(js_name = exportWebp)]
     pub fn export_webp(&self) -> Vec<u8> {
         raw_to_webp(&self.data, self.width, self.height)
@@ -83,7 +104,7 @@ impl RgbaBuffer {
 
     #[wasm_bindgen(js_name = importRaw)]
     pub fn import_raw(&mut self, raw: &[u8], width: u32, height: u32) -> bool {
-        let expected = (width as usize) * (height as usize) * 4;
+        let expected = pixel_byte_len(width, height);
         if raw.len() != expected {
             return false;
         }
@@ -105,19 +126,22 @@ impl RgbaBuffer {
         let decoded = png_to_raw(png_buffer, width, height);
         self.overwrite_with(decoded, width, height)
     }
+}
 
+#[wasm_bindgen]
+impl RgbaBuffer {
     #[wasm_bindgen(js_name = readRect)]
     pub fn read_rect(&self, rect_x: i32, rect_y: i32, rect_width: u32, rect_height: u32) -> Vec<u8> {
         let width = rect_width as i32;
         let height = rect_height as i32;
-        if width <= 0 || height <= 0 {
+        if !positive_area(width, height) {
             return Vec::new();
         }
 
         let src_w = self.width as i32;
         let src_h = self.height as i32;
 
-        let mut result = vec![0u8; (rect_width as usize) * (rect_height as usize) * 4];
+        let mut result = vec![0u8; pixel_byte_len(rect_width, rect_height)];
         for row in 0..height {
             let sy = rect_y + row;
             if sy < 0 || sy >= src_h {
@@ -154,11 +178,11 @@ impl RgbaBuffer {
     pub fn write_rect(&mut self, rect_x: i32, rect_y: i32, rect_width: u32, rect_height: u32, data: &[u8]) -> bool {
         let width = rect_width as i32;
         let height = rect_height as i32;
-        if width <= 0 || height <= 0 {
+        if !positive_area(width, height) {
             return false;
         }
 
-        let expected = (rect_width as usize) * (rect_height as usize) * 4;
+        let expected = pixel_byte_len(rect_width, rect_height);
         if data.len() != expected {
             return false;
         }
@@ -324,7 +348,10 @@ impl RgbaBuffer {
         self.width = new_width;
         self.height = new_height;
     }
+}
 
+#[wasm_bindgen]
+impl RgbaBuffer {
     #[wasm_bindgen(js_name = fillMaskArea)]
     pub fn fill_mask_area(
         &mut self,
@@ -399,7 +426,10 @@ impl RgbaBuffer {
             limit_mode,
         )
     }
+}
 
+#[wasm_bindgen]
+impl RgbaBuffer {
     #[wasm_bindgen(js_name = blitFromRaw)]
     #[allow(clippy::too_many_arguments)]
     pub fn blit_from_raw(
@@ -416,7 +446,7 @@ impl RgbaBuffer {
         flip_x: bool,
         flip_y: bool,
     ) {
-        if (source_width as usize) * (source_height as usize) * 4 != source.len() {
+        if pixel_byte_len(source_width, source_height) != source.len() {
             return;
         }
         let options = PatchBufferRgbaOption {
@@ -482,14 +512,12 @@ impl RgbaBuffer {
         let sh = self.height as i32;
         let mw = mask_width as i32;
         let mh = mask_height as i32;
-        if mw <= 0 || mh <= 0 {
-            return Vec::new();
-        }
-        if (mask_width as usize) * (mask_height as usize) > mask.len() {
+        if mw <= 0 || mh <= 0 || !mask_is_valid(mask_width, mask_height, mask) {
             return Vec::new();
         }
 
-        let mut result = vec![0u8; (mask_width as usize) * (mask_height as usize) * 4];
+        let mask_bytes = mask_pixel_count(mask_width, mask_height) * 4;
+        let mut result = vec![0u8; mask_bytes];
         let ox = mask_offset_x.round() as i32;
         let oy = mask_offset_y.round() as i32;
 
@@ -534,7 +562,7 @@ impl RgbaBuffer {
             return Vec::new();
         }
 
-        let total_mask = (mask_width as usize) * (mask_height as usize);
+        let total_mask = mask_pixel_count(mask_width, mask_height);
         if total_mask > mask.len() {
             return Vec::new();
         }
@@ -567,7 +595,10 @@ impl RgbaBuffer {
 
         result
     }
+}
 
+#[wasm_bindgen]
+impl RgbaBuffer {
     #[wasm_bindgen(js_name = brightnessAndContrast)]
     pub fn brightness_contrast(&mut self, brightness: f32, contrast: f32) {
         brightness_contrast(
