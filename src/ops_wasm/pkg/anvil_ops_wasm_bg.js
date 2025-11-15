@@ -113,46 +113,6 @@ function _assertClass(instance, klass) {
     }
 }
 /**
- * Apply brightness and contrast adjustments to the image
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {BrightnessContrastOption} options
- */
-export function brightness_contrast(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, BrightnessContrastOption);
-    wasm.brightness_contrast(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Apply only brightness adjustment to the image
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} brightness
- */
-export function brightness(pixels, width, height, brightness) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.brightness(ptr0, len0, pixels, width, height, brightness);
-}
-
-/**
- * Apply only contrast adjustment to the image
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} contrast
- */
-export function contrast(pixels, width, height, contrast) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.contrast(ptr0, len0, pixels, width, height, contrast);
-}
-
-/**
  * @param {Uint8Array} pixels
  * @param {number} width
  * @param {number} height
@@ -271,113 +231,6 @@ export function scanline_flood_fill_with_mask(buffer, width, height, start_x, st
 }
 
 /**
- * Remove small isolated pixel groups (dust removal)
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {DustRemovalOption} options
- */
-export function dust_removal(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, DustRemovalOption);
-    wasm.dust_removal(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Remove small isolated pixel groups with default settings
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} max_size
- */
-export function dust_removal_simple(pixels, width, height, max_size) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.dust_removal_simple(ptr0, len0, pixels, width, height, max_size);
-}
-
-/**
- * Apply posterize effect to reduce the number of color levels
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {PosterizeOption} options
- */
-export function posterize(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, PosterizeOption);
-    wasm.posterize(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Apply posterize effect with simple level parameter
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} levels
- */
-export function posterize_simple(pixels, width, height, levels) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.posterize_simple(ptr0, len0, pixels, width, height, levels);
-}
-
-/**
- * Apply dithering effect to the image
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {DitheringOption} options
- */
-export function dithering(pixels, width, height, options) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    _assertClass(options, DitheringOption);
-    wasm.dithering(ptr0, len0, pixels, width, height, options.__wbg_ptr);
-}
-
-/**
- * Apply random dithering with simple parameters
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} levels
- */
-export function dithering_random(pixels, width, height, levels) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.dithering_random(ptr0, len0, pixels, width, height, levels);
-}
-
-/**
- * Apply error diffusion dithering with simple parameters
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} levels
- */
-export function dithering_error_diffusion(pixels, width, height, levels) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.dithering_error_diffusion(ptr0, len0, pixels, width, height, levels);
-}
-
-/**
- * Apply ordered dithering with simple parameters
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- * @param {number} levels
- */
-export function dithering_ordered(pixels, width, height, levels) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.dithering_ordered(ptr0, len0, pixels, width, height, levels);
-}
-
-/**
  * @param {Uint8Array} pixels
  * @param {number} width
  * @param {number} height
@@ -386,38 +239,6 @@ export function grayscale(pixels, width, height) {
     var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
     var len0 = WASM_VECTOR_LEN;
     wasm.grayscale(ptr0, len0, pixels, width, height);
-}
-
-/**
- * @param {Uint8Array} buffer
- * @param {number} old_width
- * @param {number} old_height
- * @param {number} new_width
- * @param {number} new_height
- * @param {number} src_origin_x
- * @param {number} src_origin_y
- * @param {number} dest_origin_x
- * @param {number} dest_origin_y
- * @returns {Uint8Array}
- */
-export function resize(buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y) {
-    var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    const ret = wasm.resize(ptr0, len0, buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y);
-    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v2;
-}
-
-/**
- * @param {Uint8Array} pixels
- * @param {number} width
- * @param {number} height
- */
-export function invert(pixels, width, height) {
-    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
-    var len0 = WASM_VECTOR_LEN;
-    wasm.invert(ptr0, len0, pixels, width, height);
 }
 
 /**
@@ -483,6 +304,200 @@ export function fill_mask_area(buffer, mask, fill_color_r, fill_color_g, fill_co
     const len1 = WASM_VECTOR_LEN;
     const ret = wasm.fill_mask_area(ptr0, len0, buffer, ptr1, len1, fill_color_r, fill_color_g, fill_color_b, fill_color_a);
     return ret !== 0;
+}
+
+let cachedUint32ArrayMemory0 = null;
+
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+/**
+ * Remove small isolated pixel groups (dust removal)
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {DustRemovalOption} options
+ */
+export function dust_removal(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, DustRemovalOption);
+    wasm.dust_removal(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Remove small isolated pixel groups with default settings
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} max_size
+ */
+export function dust_removal_simple(pixels, width, height, max_size) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dust_removal_simple(ptr0, len0, pixels, width, height, max_size);
+}
+
+/**
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ */
+export function invert(pixels, width, height) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.invert(ptr0, len0, pixels, width, height);
+}
+
+/**
+ * Apply posterize effect to reduce the number of color levels
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {PosterizeOption} options
+ */
+export function posterize(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, PosterizeOption);
+    wasm.posterize(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply posterize effect with simple level parameter
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function posterize_simple(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.posterize_simple(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * Apply brightness and contrast adjustments to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {BrightnessContrastOption} options
+ */
+export function brightness_contrast(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, BrightnessContrastOption);
+    wasm.brightness_contrast(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply only brightness adjustment to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} brightness
+ */
+export function brightness(pixels, width, height, brightness) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.brightness(ptr0, len0, pixels, width, height, brightness);
+}
+
+/**
+ * Apply only contrast adjustment to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} contrast
+ */
+export function contrast(pixels, width, height, contrast) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.contrast(ptr0, len0, pixels, width, height, contrast);
+}
+
+/**
+ * Apply dithering effect to the image
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {DitheringOption} options
+ */
+export function dithering(pixels, width, height, options) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    _assertClass(options, DitheringOption);
+    wasm.dithering(ptr0, len0, pixels, width, height, options.__wbg_ptr);
+}
+
+/**
+ * Apply random dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_random(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_random(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * Apply error diffusion dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_error_diffusion(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_error_diffusion(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * Apply ordered dithering with simple parameters
+ * @param {Uint8Array} pixels
+ * @param {number} width
+ * @param {number} height
+ * @param {number} levels
+ */
+export function dithering_ordered(pixels, width, height, levels) {
+    var ptr0 = passArray8ToWasm0(pixels, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    wasm.dithering_ordered(ptr0, len0, pixels, width, height, levels);
+}
+
+/**
+ * @param {Uint8Array} buffer
+ * @param {number} old_width
+ * @param {number} old_height
+ * @param {number} new_width
+ * @param {number} new_height
+ * @param {number} src_origin_x
+ * @param {number} src_origin_y
+ * @param {number} dest_origin_x
+ * @param {number} dest_origin_y
+ * @returns {Uint8Array}
+ */
+export function resize(buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y) {
+    var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+    var len0 = WASM_VECTOR_LEN;
+    const ret = wasm.resize(ptr0, len0, buffer, old_width, old_height, new_width, new_height, src_origin_x, src_origin_y, dest_origin_x, dest_origin_y);
+    var v2 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+    return v2;
 }
 
 /**
@@ -636,7 +651,7 @@ export class DitheringOption {
      * @returns {number}
      */
     get strength() {
-        const ret = wasm.__wbg_get_ditheringoption_strength(this.__wbg_ptr);
+        const ret = wasm.__wbg_get_brightnesscontrastoption_contrast(this.__wbg_ptr);
         return ret;
     }
     /**
@@ -644,7 +659,7 @@ export class DitheringOption {
      * @param {number} arg0
      */
     set strength(arg0) {
-        wasm.__wbg_set_ditheringoption_strength(this.__wbg_ptr, arg0);
+        wasm.__wbg_set_brightnesscontrastoption_contrast(this.__wbg_ptr, arg0);
     }
     /**
      * @param {DitheringMode} mode
@@ -1015,6 +1030,46 @@ export class RgbaBuffer {
         const ptr0 = passArray8ToWasm0(png_buffer, wasm.__wbindgen_malloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.rgbabuffer_importPng(this.__wbg_ptr, ptr0, len0, width, height);
+        return ret !== 0;
+    }
+    /**
+     * @param {number} rect_x
+     * @param {number} rect_y
+     * @param {number} rect_width
+     * @param {number} rect_height
+     * @returns {Uint8Array}
+     */
+    readRect(rect_x, rect_y, rect_width, rect_height) {
+        const ret = wasm.rgbabuffer_readRect(this.__wbg_ptr, rect_x, rect_y, rect_width, rect_height);
+        var v1 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        return v1;
+    }
+    /**
+     * @param {number} rect_x
+     * @param {number} rect_y
+     * @param {number} rect_width
+     * @param {number} rect_height
+     * @param {Uint8Array} data
+     * @returns {boolean}
+     */
+    writeRect(rect_x, rect_y, rect_width, rect_height, data) {
+        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.rgbabuffer_writeRect(this.__wbg_ptr, rect_x, rect_y, rect_width, rect_height, ptr0, len0);
+        return ret !== 0;
+    }
+    /**
+     * @param {Uint32Array} coords
+     * @param {Uint8Array} colors
+     * @returns {boolean}
+     */
+    writePixels(coords, colors) {
+        const ptr0 = passArray32ToWasm0(coords, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArray8ToWasm0(colors, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.rgbabuffer_writePixels(this.__wbg_ptr, ptr0, len0, ptr1, len1);
         return ret !== 0;
     }
     /**

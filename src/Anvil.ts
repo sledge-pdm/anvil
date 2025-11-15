@@ -6,6 +6,7 @@ import { PackedDiffs } from './types/patch/Patch';
 import { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8ClampedArray } from './types/rawBuffer';
+import type { PixelPatchData } from './types/patch/pixel';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 
 /**
@@ -120,65 +121,16 @@ export class Anvil {
 
   setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: RawPixelData): void {
     const { x, y, width: w, height: h } = boundBox;
-    const sourceBuffer = toUint8ClampedArray(source);
-
-    if (w > 0 && h > 0) {
-      const buf = this.getBufferPointer();
-      if (buf) {
-        for (let row = 0; row < h; row++) {
-          const sy = y + row;
-          if (sy < 0 || sy >= this.getHeight()) continue;
-          const srcOffset = row * w * 4;
-          const dstOffset = (sy * this.getWidth() + x) * 4;
-          // Clamp horizontal copy within layer bounds
-          let copyW = w;
-          let srcXOffset = 0;
-          if (x < 0) {
-            // shift source start
-            const shift = -x;
-            srcXOffset = shift * 4;
-            copyW -= shift;
-          }
-          if (x + copyW > this.getWidth()) {
-            copyW = this.getWidth() - x;
-          }
-          if (copyW <= 0) continue;
-          buf.set(sourceBuffer.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
-        }
-      }
-    }
+    if (w <= 0 || h <= 0) return;
+    this.buffer.writeRect(x, y, w, h, source);
   }
 
   getPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }): Uint8ClampedArray {
     const { x, y, width: w, height: h } = boundBox;
-    const result = new Uint8ClampedArray(w * h * 4);
-    if (w > 0 && h > 0) {
-      const buf = this.getBufferPointer();
-      if (buf) {
-        for (let row = 0; row < h; row++) {
-          const sy = y + row;
-          if (sy < 0 || sy >= this.getHeight()) continue;
-          const dstOffset = row * w * 4;
-          const srcOffset = (sy * this.getWidth() + x) * 4;
-          // Clamp horizontal copy within layer bounds
-          let copyW = w;
-          let srcXOffset = 0;
-          if (x < 0) {
-            // shift destination start
-            const shift = -x;
-            srcXOffset = shift * 4;
-            copyW -= shift;
-          }
-          if (x + copyW > this.getWidth()) {
-            copyW = this.getWidth() - x;
-          }
-          if (copyW <= 0) continue;
-          result.set(buf.subarray(srcOffset + srcXOffset, srcOffset + srcXOffset + copyW * 4), dstOffset + srcXOffset);
-        }
-      }
+    if (w <= 0 || h <= 0) {
+      return new Uint8ClampedArray(0);
     }
-
-    return result;
+    return this.buffer.readRect(x, y, w, h);
   }
 
   /**
@@ -230,6 +182,31 @@ export class Anvil {
 
   setDirty(x: number, y: number): void {
     this.tilesController.markDirtyByPixel(x, y);
+  }
+
+  restorePixelDiffs(diffs: PixelPatchData[]): void {
+    if (!diffs || diffs.length === 0) {
+      return;
+    }
+
+    const coordBuffer = new Uint32Array(diffs.length * 2);
+    const colorBuffer = new Uint8Array(diffs.length * 4);
+
+    let coordIndex = 0;
+    let colorIndex = 0;
+    for (const diff of diffs) {
+      coordBuffer[coordIndex++] = diff.x >>> 0;
+      coordBuffer[coordIndex++] = diff.y >>> 0;
+
+      colorBuffer[colorIndex++] = diff.color[0];
+      colorBuffer[colorIndex++] = diff.color[1];
+      colorBuffer[colorIndex++] = diff.color[2];
+      colorBuffer[colorIndex++] = diff.color[3];
+
+      this.setDirty(diff.x, diff.y);
+    }
+
+    this.buffer.writePixels(coordBuffer, colorBuffer);
   }
 
   private handleBufferMutation(newWidth: number, newHeight: number): void {

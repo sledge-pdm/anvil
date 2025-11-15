@@ -297,6 +297,32 @@ export class RgbaBuffer {
     return new Uint8ClampedArray(data.buffer);
   }
 
+  readRect(x: number, y: number, width: number, height: number): Uint8ClampedArray {
+    if (width <= 0 || height <= 0) {
+      return new Uint8ClampedArray(0);
+    }
+    const data = this.wasmBuffer.readRect(x, y, width, height);
+    return toUint8ClampedArray(data);
+  }
+
+  writeRect(x: number, y: number, width: number, height: number, source: RawPixelData): boolean {
+    if (width <= 0 || height <= 0) {
+      return false;
+    }
+    const view = toUint8Array(source);
+    return this.wasmBuffer.writeRect(x, y, width, height, view);
+  }
+
+  writePixels(coords: Uint32Array, colors: Uint8Array): boolean {
+    if (coords.length === 0 || colors.length === 0) {
+      return true;
+    }
+    if (coords.length / 2 !== colors.length / 4) {
+      return false;
+    }
+    return this.wasmBuffer.writePixels(coords, colors);
+  }
+
   invert(): void {
     this.wasmBuffer.invert();
     this.refreshDataView();
