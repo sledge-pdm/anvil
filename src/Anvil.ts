@@ -3,10 +3,10 @@ import { RgbaBuffer, TransferOptions } from './buffer/RgbaBuffer';
 import { TilesController } from './buffer/TilesController';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import { PackedDiffs } from './types/patch/Patch';
+import type { PixelPatchData } from './types/patch/pixel';
 import { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8ClampedArray } from './types/rawBuffer';
-import type { PixelPatchData } from './types/patch/pixel';
 import type { Point, RGBA, Size, TileIndex } from './types/types';
 
 /**
