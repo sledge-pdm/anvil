@@ -1,5 +1,6 @@
+import type { RGBA } from '../models/RGBA.js';
 import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/Packing.js';
-import type { RGBA, TileBounds, TileIndex, TileInfo } from '../types/types.js';
+import type { TileBounds, TileIndex, TileInfo } from '../types/types.js';
 import type { RgbaBuffer } from './RgbaBuffer.js';
 
 /**

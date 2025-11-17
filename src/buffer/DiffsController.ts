@@ -1,8 +1,8 @@
 import { packPartial, packPending, packWhole } from '../ops/Packing.js';
-import { PartialPatchData } from '../types/patch/partial.js';
+import type { PartialPatchData } from '../types/patch/partial.js';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch.js';
-import { PixelPatchData } from '../types/patch/pixel.js';
-import { PackedWholePatchData, WholePatchData } from '../types/patch/whole.js';
+import type { PixelPatchData } from '../types/patch/pixel.js';
+import type { PackedWholePatchData, WholePatchData } from '../types/patch/whole.js';
 
 export class DiffsController {
   diffs: PendingDiffs = {

@@ -1,5 +1,5 @@
 // Core types for Anvil
-export type RGBA = [r: number, g: number, b: number, a: number];
+import type { RGBA } from '../models/RGBA';
 
 export interface Point {
   x: number;

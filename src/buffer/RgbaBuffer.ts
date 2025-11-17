@@ -1,7 +1,8 @@
+import type { RGBA } from '../models/RGBA.js';
 import { AlphaBlurMode, AntialiasMode, DitheringMode, RgbaBuffer as WASMRgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
 import type { RawPixelData } from '../types/rawBuffer.js';
 import { toUint8Array, toUint8ClampedArray } from '../types/rawBuffer.js';
-import type { Point, RGBA, Size } from '../types/types.js';
+import type { Point, Size } from '../types/types.js';
 
 /**
  * Core pixel buffer operations - raw RGBA8 array management

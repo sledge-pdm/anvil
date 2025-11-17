@@ -1,6 +1,6 @@
-import { PackedPartialPatchData } from './partial.js';
-import { PackedPixelPatchData, PixelPatchData } from './pixel.js';
-import { PackedWholePatchData } from './whole.js';
+import type { PackedPartialPatchData } from './partial.js';
+import type { PackedPixelPatchData, PixelPatchData } from './pixel.js';
+import type { PackedWholePatchData } from './whole.js';
 
 export type PatchType = 'pixel' | 'tile' | 'partial' | 'whole';
 

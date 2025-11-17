@@ -1,4 +1,4 @@
-import { RGBA } from '../types';
+import { type RGBA } from '../../models/RGBA';
 
 /**
  * Pixel Diff

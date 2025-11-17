@@ -1,11 +1,12 @@
+import type { RGBA } from '../models/RGBA';
 import { png_to_raw, raw_to_png, raw_to_webp, webp_to_raw } from '../ops_wasm/pkg/anvil_ops_wasm';
-import { PackedPartialPatchData, PartialPatchData } from '../types/patch/partial';
-import { PackedDiffs, PendingDiffs } from '../types/patch/Patch';
-import { PackedPixelPatchData, PixelPatchData } from '../types/patch/pixel';
-import { PackedWholePatchData, WholePatchData } from '../types/patch/whole';
+import type { PackedPartialPatchData, PartialPatchData } from '../types/patch/partial';
+import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch';
+import type { PackedPixelPatchData, PixelPatchData } from '../types/patch/pixel';
+import type { PackedWholePatchData, WholePatchData } from '../types/patch/whole';
 import type { RawPixelData } from '../types/rawBuffer';
 import { toUint8Array } from '../types/rawBuffer';
-import { RGBA, TileIndex } from '../types/types';
+import type { TileIndex } from '../types/types';
 
 export function rawToWebp(buffer: RawPixelData, width: number, height: number): Uint8Array {
   const start = performance.now();

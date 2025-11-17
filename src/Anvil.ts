@@ -1,13 +1,14 @@
 import { DiffsController } from './buffer/DiffsController';
-import { RgbaBuffer, TransferOptions } from './buffer/RgbaBuffer';
+import { RgbaBuffer, type TransferOptions } from './buffer/RgbaBuffer';
 import { TilesController } from './buffer/TilesController';
+import type { RGBA } from './models/RGBA';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
-import { PackedDiffs } from './types/patch/Patch';
+import type { PackedDiffs } from './types/patch/Patch';
 import type { PixelPatchData } from './types/patch/pixel';
-import { PackedWholePatchData } from './types/patch/whole';
+import type { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8ClampedArray } from './types/rawBuffer';
-import type { Point, RGBA, Size, TileIndex } from './types/types';
+import type { Point, Size, TileIndex } from './types/types';
 
 /**
  * Anvil - Main facade for pixel-based drawing operations
