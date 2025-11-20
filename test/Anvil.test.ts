@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Anvil } from '../src/Anvil';
-import { RGBA, TileIndex } from '../src/types/types';
+import type { RGBA } from '../src/models/RGBA';
+import { TileIndex } from '../src/types/types';
 
 describe('Anvil Facade Integration', () => {
   let anvil: Anvil;

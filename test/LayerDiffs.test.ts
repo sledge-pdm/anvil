@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { DiffsController } from '../src/buffer/DiffsController';
 import { RgbaBuffer } from '../src/buffer/RgbaBuffer';
 import { TilesController } from '../src/buffer/TilesController';
-import type { RGBA } from '../src/types/types';
+import type { RGBA } from '../src/models/RGBA';
 
 describe('DiffsController', () => {
   let buffer: RgbaBuffer;
