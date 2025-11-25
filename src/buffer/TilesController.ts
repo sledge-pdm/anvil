@@ -1,7 +1,7 @@
 import type { RGBA } from '../models/RGBA.js';
 import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/Packing.js';
+import { RgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
 import type { TileBounds, TileIndex, TileInfo } from '../types/types.js';
-import type { RgbaBuffer } from './RgbaBuffer.js';
 
 /**
  * Controller: High-level tile operations and pixel-to-tile coordination
@@ -51,35 +51,6 @@ export class TilesController {
   }
 
   /**
-   * Fill entire tile with uniform color
-   * Returns the previous uniform color if it was uniform, undefined otherwise
-   */
-  fillTile(tileIndex: TileIndex, color: RGBA): RGBA | undefined {
-    if (!this.isValidTileIndex(tileIndex)) return undefined;
-
-    const previousColor = this.getUniformColor(tileIndex);
-    const bounds = this.getTileBounds(tileIndex);
-
-    // Fill the buffer area
-    for (let ty = 0; ty < bounds.height; ty++) {
-      for (let tx = 0; tx < bounds.width; tx++) {
-        const x = bounds.x + tx;
-        const y = bounds.y + ty;
-
-        if (this.buffer.isInBounds(x, y)) {
-          this.buffer.set(x, y, color);
-        }
-      }
-    }
-
-    // Mark as uniform and dirty
-    this.setUniform(tileIndex, true, color);
-    this.setDirty(tileIndex, true);
-
-    return previousColor;
-  }
-
-  /**
    * Check if a tile is actually uniform by sampling the buffer
    * (useful for validation or after manual buffer modifications)
    */
@@ -96,7 +67,8 @@ export class TilesController {
 
         if (!this.buffer.isInBounds(x, y)) continue;
 
-        const color = this.buffer.get(x, y);
+        const idx = (y * this.buffer.width() + x) * 4;
+        const color: RGBA = [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
 
         if (!firstColor) {
           firstColor = color;
@@ -150,8 +122,8 @@ export class TilesController {
     const x = index.col * this.tileSize;
     const y = index.row * this.tileSize;
 
-    const maxWidth = this.buffer.width;
-    const maxHeight = this.buffer.height;
+    const maxWidth = this.buffer.width();
+    const maxHeight = this.buffer.height();
 
     const width = Math.min(this.tileSize, maxWidth - x);
     const height = Math.min(this.tileSize, maxHeight - y);

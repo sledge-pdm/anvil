@@ -262,9 +262,10 @@ export function putShapeLine(opts: PutShapeLineOptions): PixelPatchData[] | unde
       const gx = clipMinX + localX;
       if (filter && !filter(gx, gy)) continue;
       if (manualDiff) {
-        const before = buf.get(gx, gy) as RGBA;
-        buf.set(gx, gy, color);
-        diffs!.push({ x: gx, y: gy, color: before });
+        const before = buf.getPixel(gx, gy);
+        const beforeColor: RGBA = [before[0], before[1], before[2], before[3]];
+        buf.setPixel(gx, gy, ...color);
+        diffs!.push({ x: gx, y: gy, color: beforeColor });
         opts.anvil.setDirty(gx, gy);
       } else {
         opts.anvil.setPixel(gx, gy, color);

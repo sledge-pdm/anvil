@@ -1,13 +1,14 @@
 import { DiffsController } from './buffer/DiffsController';
-import { RgbaBuffer, type TransferOptions } from './buffer/RgbaBuffer';
 import { TilesController } from './buffer/TilesController';
 import type { RGBA } from './models/RGBA';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
+import { RgbaBuffer } from './ops_wasm/pkg/anvil_ops_wasm';
+import { AntialiasMode } from './ops_wasm/pkg/anvil_ops_wasm_bg';
 import type { PackedDiffs } from './types/patch/Patch';
 import type { PixelPatchData } from './types/patch/pixel';
 import type { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
-import { toUint8ClampedArray } from './types/rawBuffer';
+import { toUint8Array, toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, Size, TileIndex } from './types/types';
 
 /**
@@ -33,11 +34,11 @@ export class Anvil {
 
   // Basic properties
   getWidth(): number {
-    return this.buffer.width;
+    return this.buffer.width();
   }
 
   getHeight(): number {
-    return this.buffer.height;
+    return this.buffer.height();
   }
 
   /**
@@ -57,7 +58,7 @@ export class Anvil {
   }
 
   importRaw(buffer: RawPixelData, width: number, height: number): boolean {
-    const ok = this.buffer.importRaw(buffer, width, height);
+    const ok = this.buffer.importRaw(toUint8Array(buffer), width, height);
     if (ok) {
       this.handleBufferMutation(width, height);
     }
@@ -81,20 +82,33 @@ export class Anvil {
   }
 
   sliceWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
-    return this.buffer.sliceWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
+    this.buffer.sliceWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
+    return this.buffer.data();
   }
 
   cropWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
-    return this.buffer.cropWithMask(mask, maskWidth, maskHeight, { offsetX, offsetY });
+    this.buffer.cropWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
+    return this.buffer.data();
   }
 
   transferFromRaw(source: RawPixelData, width: number, height: number, options?: TransferOptions): void {
-    this.buffer.transferFromRaw(source, width, height, options);
+    const view = toUint8Array(source);
+    const {
+      offsetX = 0,
+      offsetY = 0,
+      scaleX = 1,
+      scaleY = 1,
+      rotate = 0,
+      flipX = false,
+      flipY = false,
+      antialiasMode = AntialiasMode.Nearest,
+    } = options ?? {};
+    this.buffer.blitFromRaw(view, width, height, offsetX, offsetY, scaleX, scaleY, rotate, antialiasMode, flipX, flipY);
     this.tilesController.setAllDirty();
   }
 
   resetBuffer(buffer?: RawPixelData): void {
-    this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width * this.buffer.height * 4));
+    this.replaceBuffer(buffer ?? new Uint8ClampedArray(this.buffer.width() * this.buffer.height() * 4));
   }
 
   /**
@@ -104,9 +118,10 @@ export class Anvil {
   replaceBuffer(buffer: RawPixelData, width?: number, height?: number): void {
     if (width !== undefined && height !== undefined) {
       this.resize(width, height);
+      return;
     }
 
-    const expectedLength = this.buffer.width * this.buffer.height * 4;
+    const expectedLength = this.buffer.width() * this.buffer.height() * 4;
     const clampedBuffer = toUint8ClampedArray(buffer);
     if (clampedBuffer.length !== expectedLength) {
       throw new Error(
@@ -115,15 +130,14 @@ export class Anvil {
     }
 
     // Copy data to internal buffer
-    this.buffer.data.set(clampedBuffer);
-
-    this.handleBufferMutation(this.buffer.width, this.buffer.height);
+    this.buffer.overwriteWith(toUint8Array(clampedBuffer), this.buffer.width(), this.buffer.height());
+    this.handleBufferMutation(this.buffer.width(), this.buffer.height());
   }
 
   setPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }, source: RawPixelData): void {
     const { x, y, width: w, height: h } = boundBox;
     if (w <= 0 || h <= 0) return;
-    this.buffer.writeRect(x, y, w, h, source);
+    this.buffer.writeRect(x, y, w, h, toUint8Array(source));
   }
 
   getPartialBuffer(boundBox: { x: number; y: number; width: number; height: number }): Uint8ClampedArray {
@@ -131,7 +145,7 @@ export class Anvil {
     if (w <= 0 || h <= 0) {
       return new Uint8ClampedArray(0);
     }
-    return this.buffer.readRect(x, y, w, h);
+    return toUint8ClampedArray(this.buffer.readRect(x, y, w, h));
   }
 
   /**
@@ -139,11 +153,11 @@ export class Anvil {
    * @returns Copy of the current pixel buffer for safe external use
    */
   getBufferCopy(): Uint8ClampedArray {
-    return new Uint8ClampedArray(this.buffer.data);
+    return new Uint8ClampedArray(this.buffer.data());
   }
   // Buffer access
   getBufferPointer(): Uint8ClampedArray {
-    return this.buffer.data;
+    return this.buffer.data();
   }
 
   /**
@@ -152,7 +166,7 @@ export class Anvil {
    */
   applyWholeBufferEffect(effect: (buffer: RgbaBuffer) => void): void {
     // Capture the current buffer state for undo/redo before mutating it
-    this.addWholeDiff(this.buffer.data);
+    this.addWholeDiff(this.buffer.data());
     effect(this.buffer);
   }
 
@@ -165,7 +179,8 @@ export class Anvil {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    return this.buffer.get(x, y);
+    const idx = (y * this.buffer.width() + x) * 4;
+    return [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
   }
 
   setPixel(x: number, y: number, color: RGBA): void {
@@ -173,8 +188,12 @@ export class Anvil {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
 
-    const oldColor = this.buffer.get(x, y);
-    this.buffer.set(x, y, color);
+    const idx = (y * this.buffer.width() + x) * 4;
+    const oldColor: RGBA = [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
+    this.buffer.data()[idx] = color[0];
+    this.buffer.data()[idx + 1] = color[1];
+    this.buffer.data()[idx + 2] = color[2];
+    this.buffer.data()[idx + 3] = color[3];
     this.tilesController.markDirtyByPixel(x, y);
     this.diffsController.addPixel({ x, y, color: oldColor });
     const tileIndex = this.tilesController.pixelToTileIndex(x, y);
@@ -217,7 +236,7 @@ export class Anvil {
   }
 
   fillWithMaskArea(args: { mask: Uint8Array; color: RGBA }): boolean {
-    return this.buffer.fillMaskArea(args.mask, args.color);
+    return this.buffer.fillMaskArea(args.mask, ...args.color);
   }
 
   floodFill(args: {
@@ -230,10 +249,11 @@ export class Anvil {
       mode: 'inside' | 'outside' | 'none';
     };
   }): boolean {
-    return this.buffer.floodFill(args.startX, args.startY, args.color, {
-      threshold: args.threshold,
-      mask: args.mask,
-    });
+    if (args.mask) {
+      return this.buffer.floodFillWithMask(args.startX, args.startY, ...args.color, args.threshold ?? 0, args.mask.buffer, args.mask.mode);
+    } else {
+      return this.buffer.floodFill(args.startX, args.startY, ...args.color, args.threshold ?? 0);
+    }
   }
 
   private checkTileUniformity(tileIndex: { row: number; col: number }): void {
@@ -241,7 +261,7 @@ export class Anvil {
     this.tilesController.detectTileUniformity(tileIndex);
   }
 
-  /**
+  /*
    * @deprecated addWholeDiff should be replaced to this addCurrentWholeDiff.
    * Register a whole-buffer change (swap method) into diff tracking.
    * Marks all tiles dirty so renderer can refresh.
@@ -290,7 +310,7 @@ export class Anvil {
   // Resize operations
   resize(newWidth: number, newHeight: number): void {
     const newSize: Size = { width: newWidth, height: newHeight };
-    this.buffer.resize(newSize);
+    this.buffer.resize_with_origins(newSize.width, newSize.height, 0, 0, 0, 0);
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
     this.diffsController.discard();
@@ -303,7 +323,10 @@ export class Anvil {
       destOrigin?: Point;
     }
   ): void {
-    this.buffer.resize(newSize, options);
+    const srcOrigin = options?.srcOrigin ?? { x: 0, y: 0 };
+    const destOrigin = options?.destOrigin ?? { x: 0, y: 0 };
+
+    this.buffer.resize_with_origins(newSize.width, newSize.height, srcOrigin.x, srcOrigin.y, destOrigin.x, destOrigin.y);
     this.tilesController.resize(newSize.width, newSize.height);
     // Note: This would invalidate current diffs, so we clear them
     this.diffsController.discard();
@@ -330,12 +353,18 @@ export class Anvil {
     // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
       const { boundBox, swapBufferWebp } = patch.partial;
-      const decodedBuffer = RgbaBuffer.fromWebp(boundBox.width, boundBox.height, swapBufferWebp);
+      const decodedBuffer = new RgbaBuffer(boundBox.width, boundBox.height);
+      decodedBuffer.importWebp(swapBufferWebp, boundBox.width, boundBox.height);
+
       const currentPartial = this.getPartialBuffer(boundBox);
-      const currentBuffer = RgbaBuffer.fromRaw(boundBox.width, boundBox.height, currentPartial).exportWebp();
-      this.setPartialBuffer(boundBox, new Uint8ClampedArray(decodedBuffer.data));
+      const currentBuffer = new RgbaBuffer(boundBox.width, boundBox.height);
+      currentBuffer.importRaw(toUint8Array(currentPartial), boundBox.width, boundBox.height);
+
+      const decoded = currentBuffer.exportWebp();
+
+      this.setPartialBuffer(boundBox, decodedBuffer.data());
       // Update the patch to contain the previous buffer content for next swap
-      patch.partial.swapBufferWebp = currentBuffer;
+      patch.partial.swapBufferWebp = decoded;
     }
 
     // Pixels
@@ -387,4 +416,20 @@ export class Anvil {
   clearDirtyTiles(): void {
     this.tilesController.clearAllDirty();
   }
+}
+
+export interface TransferOptions {
+  scaleX?: number;
+  scaleY?: number;
+  rotate?: number;
+  offsetX?: number;
+  offsetY?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  antialiasMode?: AntialiasMode;
+}
+
+export interface MaskOptions {
+  offsetX?: number;
+  offsetY?: number;
 }

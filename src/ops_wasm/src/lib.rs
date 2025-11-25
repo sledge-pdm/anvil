@@ -1,7 +1,10 @@
 use wasm_bindgen::prelude::*;
 
-pub mod buffer;
+pub mod effects;
 pub mod fill;
+pub mod packing;
+pub mod patch;
+pub mod rgba;
 
 #[wasm_bindgen]
 extern "C" {

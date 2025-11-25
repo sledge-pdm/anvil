@@ -9,9 +9,7 @@ export type { RawPixelData } from './src/types/rawBuffer.js';
 export type { Point, Size, TileBounds, TileIndex, TileInfo } from './src/types/types.js';
 
 // Core classes
-export { Anvil } from './src/Anvil.js';
-export { RgbaBuffer } from './src/buffer/RgbaBuffer.js';
-export type { TransferOptions } from './src/buffer/RgbaBuffer.js';
+export { Anvil, type TransferOptions } from './src/Anvil.js';
 
 // For advanced usage - direct access to components
 export { DiffsController } from './src/buffer/DiffsController.js';
@@ -32,4 +30,4 @@ export {
 export { putShape, putShapeLine, type ShapeMask } from './src/ops/Shape.js';
 
 // WASM enums
-export { AlphaBlurMode, AntialiasMode, DitheringMode } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
+export { AlphaBlurMode, AntialiasMode, DitheringMode, RgbaBuffer } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
