@@ -1,5 +1,5 @@
 {
-  "name": "anvil-ops-wasm",
+  "name": "anvil-wasm",
   "type": "module",
   "collaborators": [
     "innsbluck <innsbluck@gmail.com>"
@@ -8,15 +8,15 @@
   "version": "0.1.0",
   "license": "MIT/Apache-2.0",
   "files": [
-    "anvil_ops_wasm_bg.wasm",
-    "anvil_ops_wasm.js",
-    "anvil_ops_wasm_bg.js",
-    "anvil_ops_wasm.d.ts"
+    "anvil_wasm_bg.wasm",
+    "anvil_wasm.js",
+    "anvil_wasm_bg.js",
+    "anvil_wasm.d.ts"
   ],
-  "main": "anvil_ops_wasm.js",
-  "types": "anvil_ops_wasm.d.ts",
+  "main": "anvil_wasm.js",
+  "types": "anvil_wasm.d.ts",
   "sideEffects": [
-    "./anvil_ops_wasm.js",
+    "./anvil_wasm.js",
     "./snippets/*"
   ]
 }

@@ -31,7 +31,7 @@ jobs:
         with:
           filters: |
             rust:
-              - 'src/ops_wasm/**'
+              - 'src/wasm/**'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
             ts:
@@ -123,16 +123,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            src/ops_wasm
+            src/wasm
 
       - name: Rust format check
-        working-directory: src/ops_wasm
+        working-directory: src/wasm
         run: cargo fmt --all -- --check
 
       - name: Rust clippy
-        working-directory: src/ops_wasm
+        working-directory: src/wasm
         run: cargo clippy --all-targets -- -D warnings
 
       - name: Rust check
-        working-directory: src/ops_wasm
+        working-directory: src/wasm
         run: cargo check --all-targets
