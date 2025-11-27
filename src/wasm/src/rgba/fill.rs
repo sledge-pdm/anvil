@@ -94,7 +94,7 @@ impl RgbaBuffer {
         selection_mask: &[u8],
         limit_mode: &str,
     ) -> bool {
-         scanline_flood_fill_with_mask(
+        scanline_flood_fill_with_mask(
             &mut self.data,
             self.width,
             self.height,
