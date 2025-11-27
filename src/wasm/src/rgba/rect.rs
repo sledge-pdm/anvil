@@ -113,7 +113,7 @@ impl RgbaBuffer {
 
     #[wasm_bindgen(js_name = writePixels)]
     pub fn write_pixels(&mut self, coords: &[u32], colors: &[u8]) -> bool {
-        if coords.len() % 2 != 0 || colors.len() % 4 != 0 {
+        if !coords.len().is_multiple_of(2) || !colors.len().is_multiple_of(4) {
             return false;
         }
         let pixels = coords.len() / 2;
