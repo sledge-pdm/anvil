@@ -50,9 +50,12 @@ impl RgbaBuffer {
         let copy_dst_top = 0.max(valid_dy_min);
         let copy_dst_right = new_w.min(valid_dx_max);
         let copy_dst_bottom = new_h.min(valid_dy_max);
+        let needs_new_buffer = (new_w * new_h > old_w * old_h)
+            || src_origin_x != dest_origin_x
+            || src_origin_y != dest_origin_y;
 
-        if new_w * new_h > old_w * old_h {
-            // grow: allocate new buffer and copy overlapping rows
+        if needs_new_buffer {
+            // grow, or offset move that requires zero-filling untouched area: allocate new buffer and copy overlapping rows
             let mut new_buf = vec![0u8; (new_w * new_h * 4) as usize];
             if copy_dst_left < copy_dst_right && copy_dst_top < copy_dst_bottom {
                 let row_copy_width = (copy_dst_right - copy_dst_left) as usize;

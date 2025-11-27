@@ -45,6 +45,7 @@ export const raw_to_webp: (a: number, b: number, c: number, d: number) => [numbe
 export const webp_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
 export const raw_to_png: (a: number, b: number, c: number, d: number) => [number, number];
 export const png_to_raw: (a: number, b: number, c: number, d: number) => [number, number];
+export const __wbg_rgbabuffer_free: (a: number, b: number) => void;
 export const __wbg_dustremovaloption_free: (a: number, b: number) => void;
 export const __wbg_get_dustremovaloption_max_size: (a: number) => number;
 export const __wbg_set_dustremovaloption_max_size: (a: number, b: number) => void;
@@ -91,7 +92,6 @@ export const dithering_error_diffusion: (a: number, b: number, c: any, d: number
 export const dithering_ordered: (a: number, b: number, c: any, d: number, e: number, f: number) => void;
 export const __wbg_set_ditheringoption_strength: (a: number, b: number) => void;
 export const __wbg_get_ditheringoption_strength: (a: number) => number;
-export const __wbg_rgbabuffer_free: (a: number, b: number) => void;
 export const rgbabuffer_blitFromRaw: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number, k: number, l: number, m: number) => void;
 export const rgbabuffer_blitFromBuffer: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => void;
 export const rgbabuffer_sliceWithMask: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number];
