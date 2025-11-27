@@ -1,4 +1,3 @@
-import type { RGBA } from '../models/RGBA.js';
 import { tileIndexToLinear } from '../ops/Packing.js';
 import type { TileBounds, TileIndex, TileInfo } from '../types/types.js';
 import { RgbaBuffer } from '../wasm/pkg/anvil_wasm.js';

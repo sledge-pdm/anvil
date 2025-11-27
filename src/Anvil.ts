@@ -157,7 +157,7 @@ export class Anvil {
   }
   // Buffer access
   getBufferPointer(): Uint8ClampedArray {
-    return this.buffer.data();
+    return toUint8ClampedArray(this.buffer.data());
   }
 
   /**

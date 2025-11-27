@@ -182,12 +182,12 @@ describe('Anvil Facade Integration', () => {
   describe('Tile Management', () => {
     it('should track dirty tiles after changes', () => {
       // Initially no dirty tiles
-      expect(anvil.getDirtyTileIndices()).toHaveLength(0);
+      expect(anvil.getDirtyTiles()).toHaveLength(0);
 
       // Make a change in first tile
       anvil.setPixel(15, 15, [255, 255, 255, 255]);
 
-      const dirtyTiles = anvil.getDirtyTileIndices();
+      const dirtyTiles = anvil.getDirtyTiles();
       expect(dirtyTiles).toHaveLength(1);
       expect(dirtyTiles[0]).toEqual({ row: 0, col: 0 });
     });
@@ -198,7 +198,7 @@ describe('Anvil Facade Integration', () => {
       anvil.setPixel(50, 10, [0, 255, 0, 255]); // Tile (0,1)
       anvil.setPixel(10, 50, [0, 0, 255, 255]); // Tile (1,0)
 
-      const dirtyTiles = anvil.getDirtyTileIndices();
+      const dirtyTiles = anvil.getDirtyTiles();
       expect(dirtyTiles).toHaveLength(3);
 
       // Check that all expected tiles are marked dirty
@@ -211,26 +211,11 @@ describe('Anvil Facade Integration', () => {
     it('should clear dirty tiles after flush', () => {
       anvil.setPixel(20, 20, [128, 128, 128, 255]);
 
-      expect(anvil.getDirtyTileIndices()).toHaveLength(1);
+      expect(anvil.getDirtyTiles()).toHaveLength(1);
 
       anvil.clearDirtyTiles();
 
-      expect(anvil.getDirtyTileIndices()).toHaveLength(0);
-    });
-
-    it('should handle tile uniform color optimization', () => {
-      const uniformColor: RGBA = [100, 150, 200, 255];
-
-      // Fill entire tile with same color
-      for (let y = 0; y < tileSize; y++) {
-        for (let x = 0; x < tileSize; x++) {
-          anvil.setPixel(x, y, uniformColor);
-        }
-      }
-
-      // Tile should be marked as having uniform color
-      const tileColor = anvil.getTileUniformColor({ row: 0, col: 0 });
-      expect(tileColor).toEqual(uniformColor);
+      expect(anvil.getDirtyTiles()).toHaveLength(0);
     });
   });
 
