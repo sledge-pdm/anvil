@@ -177,14 +177,14 @@ export class Anvil {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    return this.buffer.get(x, y);
+    return this.buffer.get(x, y) as RGBA;
   }
 
   setPixel(x: number, y: number, color: RGBA, noDiff?: boolean): void {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    const oldColor: RGBA = this.buffer.get(x, y);
+    const oldColor: RGBA = this.buffer.get(x, y) as RGBA;
 
     this.buffer.set(x, y, ...color);
 
@@ -254,8 +254,14 @@ export class Anvil {
    * Marks all tiles dirty so renderer can refresh.
    */
   addWholeDiff(swapBuffer: RawPixelData): void {
-    const clampedSwap = new Uint8ClampedArray(toUint8ClampedArray(swapBuffer));
+    const clampedSwap = toUint8ClampedArray(swapBuffer);
     this.diffsController.addWhole({ swapBuffer: clampedSwap, width: this.getWidth(), height: this.getHeight() });
+    this.tilesController.setAllDirty();
+  }
+
+  addWholeDiffWebp(swapBufferWebp: RawPixelData): void {
+    const clampedSwapWebp = toUint8Array(swapBufferWebp);
+    this.diffsController.addWholePacked({ swapBufferWebp: clampedSwapWebp, width: this.getWidth(), height: this.getHeight() });
     this.tilesController.setAllDirty();
   }
 
