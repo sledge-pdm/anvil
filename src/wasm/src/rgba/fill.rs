@@ -66,7 +66,7 @@ impl RgbaBuffer {
         fill_color_a: u8,
         threshold: u8,
     ) -> bool {
-        let ok = scanline_flood_fill(
+        scanline_flood_fill(
             &mut self.data,
             self.width,
             self.height,
@@ -77,8 +77,7 @@ impl RgbaBuffer {
             fill_color_b,
             fill_color_a,
             threshold,
-        );
-        ok
+        )
     }
 
     #[wasm_bindgen(js_name = floodFillWithMask)]
@@ -95,7 +94,7 @@ impl RgbaBuffer {
         selection_mask: &[u8],
         limit_mode: &str,
     ) -> bool {
-        let ok = scanline_flood_fill_with_mask(
+         scanline_flood_fill_with_mask(
             &mut self.data,
             self.width,
             self.height,
@@ -108,7 +107,6 @@ impl RgbaBuffer {
             threshold,
             selection_mask,
             limit_mode,
-        );
-        ok
+        )
     }
 }
