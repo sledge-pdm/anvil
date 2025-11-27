@@ -15,6 +15,26 @@ impl RgbaBuffer {
         true
     }
 
+    #[wasm_bindgen(js_name = fillAllPixels)]
+    pub fn fill_all_pixels(
+        &mut self,
+        fill_color_r: u8,
+        fill_color_g: u8,
+        fill_color_b: u8,
+        fill_color_a: u8,
+    ) -> bool {
+        let pixel_len = self.width * self.height;
+        for i in 0..pixel_len {
+            self.index_set(
+                i * 4,
+                fill_color_r,
+                fill_color_g,
+                fill_color_b,
+                fill_color_a,
+            );
+        }
+        true
+    }
     #[wasm_bindgen(js_name = fillMaskArea)]
     pub fn fill_mask_area(
         &mut self,

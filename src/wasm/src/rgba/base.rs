@@ -1,5 +1,5 @@
 use crate::rgba::RgbaBuffer;
-use js_sys::Uint8ClampedArray;
+use js_sys::{Array, Uint8ClampedArray};
 use wasm_bindgen::prelude::*;
 
 pub fn pixel_byte_len(width: u32, height: u32) -> usize {
@@ -29,6 +29,47 @@ impl RgbaBuffer {
             width,
             height,
             data: vec![0u8; size],
+        }
+    }
+
+    #[wasm_bindgen(js_name = fromRaw)]
+    pub fn from_raw(width: u32, height: u32, buf: Vec<u8>) -> Result<RgbaBuffer, JsValue> {
+        let expected = pixel_byte_len(width, height);
+        if buf.len() != expected {
+            return Err(JsValue::from_str(
+                "Buffer length does not match the specified width/height.",
+            ));
+        }
+        Ok(RgbaBuffer {
+            width,
+            height,
+            data: buf,
+        })
+    }
+
+    #[wasm_bindgen(js_name = fromWebp)]
+    pub fn from_webp(width: u32, height: u32, webp_buf: Vec<u8>) -> Result<RgbaBuffer, JsValue> {
+        let raw = crate::packing::webp_to_raw(&webp_buf, width, height);
+
+        let expected = pixel_byte_len(width, height);
+        if raw.len() != expected {
+            return Err(JsValue::from_str(
+                "Buffer length does not match the specified width/height.",
+            ));
+        }
+        Ok(RgbaBuffer {
+            width,
+            height,
+            data: raw,
+        })
+    }
+
+    #[wasm_bindgen(js_name = clone)]
+    pub fn slice(&self) -> RgbaBuffer {
+        RgbaBuffer {
+            width: self.width,
+            height: self.height,
+            data: self.data.clone(),
         }
     }
 
@@ -71,14 +112,15 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = get)]
-    pub fn get(&self, x: u32, y: u32) -> Uint8ClampedArray {
-        if !self.in_bounds(x, y) {
-            return Uint8ClampedArray::new_with_length(4);
-        }
-        let idx = ((y * self.width + x) * 4) as usize;
-        let mut buf = [0u8; 4];
-        buf.copy_from_slice(&self.data[idx..idx + 4]);
-        Uint8ClampedArray::from(&buf[..])
+    pub fn get(&self, x: u32, y: u32) -> Array {
+        let (r, g, b, a) = if !self.in_bounds(x, y) {
+            (0, 0, 0, 0)
+        } else {
+            let idx = ((y * self.width + x) * 4) as usize;
+            let slice = &self.data[idx..idx + 4];
+            (slice[0], slice[1], slice[2], slice[3])
+        };
+        Self::rgba_to_js_array(r, g, b, a)
     }
 
     #[wasm_bindgen(js_name = set)]
@@ -94,14 +136,13 @@ impl RgbaBuffer {
     }
 
     #[wasm_bindgen(js_name = indexGet)]
-    pub fn index_get(&self, idx: u32) -> Uint8ClampedArray {
+    pub fn index_get(&self, idx: u32) -> Array {
         let start = idx as usize;
         if start + 4 > self.data.len() {
-            return Uint8ClampedArray::new_with_length(4);
+            return Self::rgba_to_js_array(0, 0, 0, 0);
         }
-        let mut buf = [0u8; 4];
-        buf.copy_from_slice(&self.data[start..start + 4]);
-        Uint8ClampedArray::from(&buf[..])
+        let slice = &self.data[start..start + 4];
+        Self::rgba_to_js_array(slice[0], slice[1], slice[2], slice[3])
     }
 
     #[wasm_bindgen(js_name = indexSet)]
@@ -114,5 +155,17 @@ impl RgbaBuffer {
         let changed = slice != [r, g, b, a];
         slice.copy_from_slice(&[r, g, b, a]);
         changed
+    }
+}
+
+impl RgbaBuffer {
+    /// Convert RGBA components into a plain JS array to simplify interop on the JS side.
+    fn rgba_to_js_array(r: u8, g: u8, b: u8, a: u8) -> Array {
+        let arr = Array::new_with_length(4);
+        arr.set(0, JsValue::from(r));
+        arr.set(1, JsValue::from(g));
+        arr.set(2, JsValue::from(b));
+        arr.set(3, JsValue::from(a));
+        arr
     }
 }

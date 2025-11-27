@@ -8,8 +8,7 @@ import type { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8Array, toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, Size, TileIndex } from './types/types';
-import { RgbaBuffer } from './wasm/pkg/anvil_wasm';
-import { AntialiasMode } from './wasm/pkg/anvil_wasm_bg';
+import { AntialiasMode, RgbaBuffer } from './wasm/pkg/anvil_wasm';
 
 /**
  * Anvil - Main facade for pixel-based drawing operations
@@ -43,9 +42,9 @@ export class Anvil {
 
   /**
    * Exposes the underlying buffer handle for read-only operations (e.g. generating thumbnails).
-   * !! Callers must not mutate the returned buffer directly. !!
+   * Callers must not mutate the returned buffer directly.
    */
-  dangerouslyGetBufferHandle(): RgbaBuffer {
+  getBufferHandle(): RgbaBuffer {
     return this.buffer;
   }
 
@@ -178,21 +177,19 @@ export class Anvil {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    const color: Uint8ClampedArray = this.buffer.get(x, y);
-    return [color[0], color[1], color[2], color[3]];
+    return this.buffer.get(x, y);
   }
 
   setPixel(x: number, y: number, color: RGBA, noDiff?: boolean): void {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    const oldColor: Uint8ClampedArray = this.buffer.get(x, y);
-    const oldColorRGBA: RGBA = [oldColor[0], oldColor[1], oldColor[2], oldColor[3]];
+    const oldColor: RGBA = this.buffer.get(x, y);
 
     this.buffer.set(x, y, ...color);
 
     this.tilesController.markDirtyByPixel(x, y);
-    if (!noDiff) this.diffsController.addPixel({ x, y, color: oldColorRGBA });
+    if (!noDiff) this.diffsController.addPixel({ x, y, color: oldColor });
   }
 
   setDirty(x: number, y: number): void {
@@ -300,7 +297,7 @@ export class Anvil {
   // Resize operations
   resize(newWidth: number, newHeight: number): void {
     const newSize: Size = { width: newWidth, height: newHeight };
-    this.buffer.resize_with_origins(newSize.width, newSize.height, 0, 0, 0, 0);
+    this.buffer.resize(newSize.width, newSize.height);
     this.tilesController.resize(newWidth, newHeight);
     // Note: This would invalidate current diffs, so we clear them
     this.diffsController.discard();
@@ -316,7 +313,7 @@ export class Anvil {
     const srcOrigin = options?.srcOrigin ?? { x: 0, y: 0 };
     const destOrigin = options?.destOrigin ?? { x: 0, y: 0 };
 
-    this.buffer.resize_with_origins(newSize.width, newSize.height, srcOrigin.x, srcOrigin.y, destOrigin.x, destOrigin.y);
+    this.buffer.resizeWithOrigins(newSize.width, newSize.height, srcOrigin.x, srcOrigin.y, destOrigin.x, destOrigin.y);
     this.tilesController.resize(newSize.width, newSize.height);
     // Note: This would invalidate current diffs, so we clear them
     this.diffsController.discard();
@@ -343,12 +340,9 @@ export class Anvil {
     // Partial rectangle (swap method - applies after whole, before tiles/pixels)
     if (patch.partial) {
       const { boundBox, swapBufferWebp } = patch.partial;
-      const decodedBuffer = new RgbaBuffer(boundBox.width, boundBox.height);
-      decodedBuffer.importWebp(swapBufferWebp, boundBox.width, boundBox.height);
-
+      const decodedBuffer = RgbaBuffer.fromWebp(boundBox.width, boundBox.height, swapBufferWebp);
       const currentPartial = this.getPartialBuffer(boundBox);
-      const currentBuffer = new RgbaBuffer(boundBox.width, boundBox.height);
-      currentBuffer.importRaw(toUint8Array(currentPartial), boundBox.width, boundBox.height);
+      const currentBuffer = RgbaBuffer.fromRaw(boundBox.width, boundBox.height, toUint8Array(currentPartial));
 
       const decoded = currentBuffer.exportWebp();
 

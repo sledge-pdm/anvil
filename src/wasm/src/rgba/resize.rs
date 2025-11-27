@@ -1,9 +1,14 @@
-use crate::rgba::{ RgbaBuffer};
+use crate::rgba::RgbaBuffer;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 impl RgbaBuffer {
-    #[wasm_bindgen(js_name = resize_with_origins)]
+    #[wasm_bindgen(js_name = resize)]
+    pub fn resize(&mut self, new_width: u32, new_height: u32) {
+        self.resize_with_origins(new_width, new_height, 0.0, 0.0, 0.0, 0.0);
+    }
+
+    #[wasm_bindgen(js_name = resizeWithOrigins)]
     pub fn resize_with_origins(
         &mut self,
         new_width: u32,

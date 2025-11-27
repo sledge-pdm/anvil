@@ -5,6 +5,7 @@ mod blit_crop;
 mod effects;
 mod export;
 mod fill;
+mod import;
 mod rect;
 mod resize;
 
