@@ -70,8 +70,8 @@ impl RgbaBuffer {
         true
     }
 
-    #[wasm_bindgen(js_name = getPixel)]
-    pub fn get_pixel(&self, x: u32, y: u32) -> Uint8ClampedArray {
+    #[wasm_bindgen(js_name = get)]
+    pub fn get(&self, x: u32, y: u32) -> Uint8ClampedArray {
         if !self.in_bounds(x, y) {
             return Uint8ClampedArray::new_with_length(4);
         }
@@ -81,8 +81,8 @@ impl RgbaBuffer {
         Uint8ClampedArray::from(&buf[..])
     }
 
-    #[wasm_bindgen(js_name = setPixel)]
-    pub fn set_pixel(&mut self, x: u32, y: u32, r: u8, g: u8, b: u8, a: u8) -> bool {
+    #[wasm_bindgen(js_name = set)]
+    pub fn set(&mut self, x: u32, y: u32, r: u8, g: u8, b: u8, a: u8) -> bool {
         if !self.in_bounds(x, y) {
             return false;
         }

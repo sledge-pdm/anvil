@@ -1,7 +1,7 @@
 import type { RGBA } from '../models/RGBA.js';
-import { packedU32ToRgba, rgbaToPackedU32, tileIndexToLinear } from '../ops/Packing.js';
-import { RgbaBuffer } from '../ops_wasm/pkg/anvil_ops_wasm.js';
+import { tileIndexToLinear } from '../ops/Packing.js';
 import type { TileBounds, TileIndex, TileInfo } from '../types/types.js';
+import { RgbaBuffer } from '../wasm/pkg/anvil_wasm.js';
 
 /**
  * Controller: High-level tile operations and pixel-to-tile coordination
@@ -15,10 +15,6 @@ export class TilesController {
 
   // Bitset storage for flags (more memory efficient than boolean arrays)
   private dirtyFlags: Uint32Array;
-  private uniformFlags: Uint32Array;
-
-  // Sparse storage for uniform colors (only store when tile is uniform)
-  private uniformColors: Map<number, number> = new Map(); // tileIndex -> packed RGBA32
 
   constructor(
     private buffer: RgbaBuffer,
@@ -34,7 +30,6 @@ export class TilesController {
     // Allocate bitsets (32 tiles per uint32)
     const flagArraySize = Math.ceil(this.totalTiles / 32);
     this.dirtyFlags = new Uint32Array(flagArraySize);
-    this.uniformFlags = new Uint32Array(flagArraySize);
   }
 
   /**
@@ -43,59 +38,6 @@ export class TilesController {
   markDirtyByPixel(x: number, y: number): void {
     const tileIndex = this.pixelToTileIndex(x, y);
     this.setDirty(tileIndex, true);
-
-    // If tile was uniform, it's no longer uniform after pixel change
-    if (this.isUniform(tileIndex)) {
-      this.setUniform(tileIndex, false);
-    }
-  }
-
-  /**
-   * Check if a tile is actually uniform by sampling the buffer
-   * (useful for validation or after manual buffer modifications)
-   */
-  detectTileUniformity(tileIndex: TileIndex): boolean {
-    if (!this.isValidTileIndex(tileIndex)) return false;
-
-    const bounds = this.getTileBounds(tileIndex);
-    let firstColor: RGBA | undefined = undefined;
-
-    for (let ty = 0; ty < bounds.height; ty++) {
-      for (let tx = 0; tx < bounds.width; tx++) {
-        const x = bounds.x + tx;
-        const y = bounds.y + ty;
-
-        if (!this.buffer.isInBounds(x, y)) continue;
-
-        const idx = (y * this.buffer.width() + x) * 4;
-        const color: RGBA = [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
-
-        if (!firstColor) {
-          firstColor = color;
-        } else if (color[0] !== firstColor[0] || color[1] !== firstColor[1] || color[2] !== firstColor[2] || color[3] !== firstColor[3]) {
-          return false; // Not uniform
-        }
-      }
-    }
-
-    // Update internal state to match reality
-    if (firstColor) {
-      this.setUniform(tileIndex, true, firstColor);
-    }
-
-    return true;
-  }
-
-  /**
-   * Validate all tiles' uniformity against buffer contents
-   * (expensive operation - mainly for debugging/testing)
-   */
-  validateAllTileUniformity(): void {
-    for (let row = 0; row < this.rows; row++) {
-      for (let col = 0; col < this.cols; col++) {
-        this.detectTileUniformity({ row, col });
-      }
-    }
   }
 
   getRows(): number {
@@ -174,50 +116,6 @@ export class TilesController {
   }
 
   /**
-   * Get tile uniform flag
-   */
-  isUniform(index: TileIndex): boolean {
-    if (!this.isValidTileIndex(index)) return false;
-
-    const linear = tileIndexToLinear(index, this.cols);
-    const wordIndex = Math.floor(linear / 32);
-    const bitIndex = linear % 32;
-
-    return (this.uniformFlags[wordIndex] & (1 << bitIndex)) !== 0;
-  }
-
-  /**
-   * Set tile uniform flag and color
-   */
-  setUniform(index: TileIndex, uniform: boolean, color?: RGBA): void {
-    if (!this.isValidTileIndex(index)) return;
-
-    const linear = tileIndexToLinear(index, this.cols);
-    const wordIndex = Math.floor(linear / 32);
-    const bitIndex = linear % 32;
-
-    if (uniform && color) {
-      this.uniformFlags[wordIndex] |= 1 << bitIndex;
-      this.uniformColors.set(linear, rgbaToPackedU32(color));
-    } else {
-      this.uniformFlags[wordIndex] &= ~(1 << bitIndex);
-      this.uniformColors.delete(linear);
-    }
-  }
-
-  /**
-   * Get tile uniform color (returns undefined if not uniform)
-   */
-  getUniformColor(index: TileIndex): RGBA | undefined {
-    if (!this.isUniform(index)) return undefined;
-
-    const linear = tileIndexToLinear(index, this.cols);
-    const packed = this.uniformColors.get(linear);
-
-    return packed !== undefined ? packedU32ToRgba(packed) : undefined;
-  }
-
-  /**
    * Get complete tile information
    */
   getTileInfo(index: TileIndex): TileInfo {
@@ -225,8 +123,6 @@ export class TilesController {
       index,
       bounds: this.getTileBounds(index),
       isDirty: this.isDirty(index),
-      isUniform: this.isUniform(index),
-      uniformColor: this.getUniformColor(index),
     };
   }
 
@@ -280,40 +176,6 @@ export class TilesController {
   }
 
   /**
-   * Get statistics for debugging
-   */
-  getStats(): {
-    totalTiles: number;
-    dirtyTiles: number;
-    uniformTiles: number;
-    memoryUsage: number; // bytes
-  } {
-    let dirtyCount = 0;
-    let uniformCount = 0;
-
-    for (let linear = 0; linear < this.totalTiles; linear++) {
-      const wordIndex = Math.floor(linear / 32);
-      const bitIndex = linear % 32;
-
-      if ((this.dirtyFlags[wordIndex] & (1 << bitIndex)) !== 0) {
-        dirtyCount++;
-      }
-      if ((this.uniformFlags[wordIndex] & (1 << bitIndex)) !== 0) {
-        uniformCount++;
-      }
-    }
-
-    const memoryUsage = this.dirtyFlags.byteLength + this.uniformFlags.byteLength + this.uniformColors.size * 8; // approximately 8 bytes per Map entry
-
-    return {
-      totalTiles: this.totalTiles,
-      dirtyTiles: dirtyCount,
-      uniformTiles: uniformCount,
-      memoryUsage,
-    };
-  }
-
-  /**
    * Get all dirty tile information
    */
   getDirtyTiles(): TileInfo[] {
@@ -336,7 +198,6 @@ export class TilesController {
     // Allocate bitsets (32 tiles per uint32)
     const flagArraySize = Math.ceil(this.totalTiles / 32);
     this.dirtyFlags = new Uint32Array(flagArraySize);
-    this.uniformFlags = new Uint32Array(flagArraySize);
 
     // Copy over existing tile states where they overlap
     const minRows = Math.min(oldRows, this.rows);
@@ -349,9 +210,6 @@ export class TilesController {
 
         if (oldInfo.isDirty) {
           this.setDirty(index, true);
-        }
-        if (oldInfo.isUniform && oldInfo.uniformColor) {
-          this.setUniform(index, true, oldInfo.uniformColor);
         }
       }
     }

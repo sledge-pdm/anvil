@@ -30,4 +30,4 @@ export {
 export { putShape, putShapeLine, type ShapeMask } from './src/ops/Shape.js';
 
 // WASM enums
-export { AlphaBlurMode, AntialiasMode, DitheringMode, RgbaBuffer } from './src/ops_wasm/pkg/anvil_ops_wasm.js';
+export { AlphaBlurMode, AntialiasMode, DitheringMode, RgbaBuffer } from './src/wasm/pkg/anvil_wasm.js';

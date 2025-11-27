@@ -27,6 +27,4 @@ export interface TileInfo {
   index: TileIndex;
   bounds: TileBounds;
   isDirty: boolean;
-  isUniform: boolean;
-  uniformColor?: RGBA;
 }

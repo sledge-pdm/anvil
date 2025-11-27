@@ -2,14 +2,14 @@ import { DiffsController } from './buffer/DiffsController';
 import { TilesController } from './buffer/TilesController';
 import type { RGBA } from './models/RGBA';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
-import { RgbaBuffer } from './ops_wasm/pkg/anvil_ops_wasm';
-import { AntialiasMode } from './ops_wasm/pkg/anvil_ops_wasm_bg';
 import type { PackedDiffs } from './types/patch/Patch';
 import type { PixelPatchData } from './types/patch/pixel';
 import type { PackedWholePatchData } from './types/patch/whole';
 import type { RawPixelData } from './types/rawBuffer';
 import { toUint8Array, toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, Size, TileIndex } from './types/types';
+import { RgbaBuffer } from './wasm/pkg/anvil_wasm';
+import { AntialiasMode } from './wasm/pkg/anvil_wasm_bg';
 
 /**
  * Anvil - Main facade for pixel-based drawing operations
@@ -43,9 +43,9 @@ export class Anvil {
 
   /**
    * Exposes the underlying buffer handle for read-only operations (e.g. generating thumbnails).
-   * Callers must not mutate the returned buffer directly.
+   * !! Callers must not mutate the returned buffer directly. !!
    */
-  getBufferHandle(): RgbaBuffer {
+  dangerouslyGetBufferHandle(): RgbaBuffer {
     return this.buffer;
   }
 
@@ -81,15 +81,15 @@ export class Anvil {
     return ok;
   }
 
-  sliceWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
-    this.buffer.sliceWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
-    return this.buffer.data();
-  }
+  // sliceWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+  //   this.buffer.sliceWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
+  //   return this.buffer.data();
+  // }
 
-  cropWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
-    this.buffer.cropWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
-    return this.buffer.data();
-  }
+  // cropWithMask(mask: RawPixelData, maskWidth: number, maskHeight: number, offsetX = 0, offsetY = 0): Uint8ClampedArray {
+  //   this.buffer.cropWithMask(toUint8Array(mask), maskWidth, maskHeight, offsetX, offsetY);
+  //   return this.buffer.data();
+  // }
 
   transferFromRaw(source: RawPixelData, width: number, height: number, options?: TransferOptions): void {
     const view = toUint8Array(source);
@@ -174,30 +174,25 @@ export class Anvil {
     return this.tileSize;
   }
 
-  // Pixel operations
   getPixel(x: number, y: number): RGBA {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
-    const idx = (y * this.buffer.width() + x) * 4;
-    return [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
+    const color: Uint8ClampedArray = this.buffer.get(x, y);
+    return [color[0], color[1], color[2], color[3]];
   }
 
-  setPixel(x: number, y: number, color: RGBA): void {
+  setPixel(x: number, y: number, color: RGBA, noDiff?: boolean): void {
     if (!this.buffer.isInBounds(x, y)) {
       throw new Error(`Pixel coordinates (${x}, ${y}) are out of bounds`);
     }
+    const oldColor: Uint8ClampedArray = this.buffer.get(x, y);
+    const oldColorRGBA: RGBA = [oldColor[0], oldColor[1], oldColor[2], oldColor[3]];
 
-    const idx = (y * this.buffer.width() + x) * 4;
-    const oldColor: RGBA = [this.buffer.data()[idx], this.buffer.data()[idx + 1], this.buffer.data()[idx + 2], this.buffer.data()[idx + 3]];
-    this.buffer.data()[idx] = color[0];
-    this.buffer.data()[idx + 1] = color[1];
-    this.buffer.data()[idx + 2] = color[2];
-    this.buffer.data()[idx + 3] = color[3];
+    this.buffer.set(x, y, ...color);
+
     this.tilesController.markDirtyByPixel(x, y);
-    this.diffsController.addPixel({ x, y, color: oldColor });
-    const tileIndex = this.tilesController.pixelToTileIndex(x, y);
-    this.checkTileUniformity(tileIndex);
+    if (!noDiff) this.diffsController.addPixel({ x, y, color: oldColorRGBA });
   }
 
   setDirty(x: number, y: number): void {
@@ -254,11 +249,6 @@ export class Anvil {
     } else {
       return this.buffer.floodFill(args.startX, args.startY, ...args.color, args.threshold ?? 0);
     }
-  }
-
-  private checkTileUniformity(tileIndex: { row: number; col: number }): void {
-    // Use the tile controller's detectTileUniformity method
-    this.tilesController.detectTileUniformity(tileIndex);
   }
 
   /*
@@ -400,13 +390,8 @@ export class Anvil {
     };
   }
 
-  getDirtyTileIndices(): TileIndex[] {
+  getDirtyTiles(): TileIndex[] {
     return this.tilesController.getDirtyTiles().map((info) => info.index);
-  }
-
-  getTileUniformColor(tileIndex: TileIndex): RGBA | null {
-    const tileInfo = this.tilesController.getTileInfo(tileIndex);
-    return tileInfo.uniformColor || null;
   }
 
   setAllDirty(): void {

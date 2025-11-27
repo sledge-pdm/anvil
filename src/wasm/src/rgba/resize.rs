@@ -1,4 +1,4 @@
-use crate::rgba::RgbaBuffer;
+use crate::rgba::{ RgbaBuffer};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

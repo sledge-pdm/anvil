@@ -135,6 +135,7 @@ impl RgbaBuffer {
             let color_index = i * 4;
             self.data[dst_index..dst_index + 4]
                 .copy_from_slice(&colors[color_index..color_index + 4]);
+
         }
 
         true
