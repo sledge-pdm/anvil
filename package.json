@@ -24,7 +24,7 @@
     "dev": "tsc --watch",
     "test": "vitest run -c ./vitest.config.ts",
     "test:coverage": "vitest --coverage",
-    "wasm:build": "wasm-pack build ./src/wasm --target bundler",
+    "wasm:build": "wasm-pack build ./src/wasm --target bundler && rm ./src/wasm/pkg/.gitignore && rm ./src/wasm/pkg/package.json",
     "prettier": "prettier --write . --config .prettierrc",
     "cargo:format": "cd src/wasm && cargo fmt",
     "format": "pnpm prettier && pnpm cargo:format"
