@@ -1,7 +1,8 @@
 {
   "name": "@sledge/anvil",
   "version": "0.0.0",
-  "private": true,
+  "description": "A buffer operations package for sledge.",
+  "private": false,
   "type": "module",
   "sideEffects": false,
   "exports": {
