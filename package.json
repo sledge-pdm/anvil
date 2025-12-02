@@ -1,7 +1,9 @@
 {
-  "name": "@sledge/anvil",
+  "name": "@sledge-pdm/anvil",
   "version": "1.0.0",
   "description": "A buffer operations package for sledge.",
+  "author": "innsbluck",
+  "license": "MIT",
   "private": false,
   "type": "module",
   "sideEffects": false,
