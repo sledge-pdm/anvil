@@ -8,9 +8,10 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: [],
-    include: ['test/**/*.test.ts', 'test/**/*.test.tsx'],
-    coverage: {
-      reporter: ['text', 'html'],
+    include: ['test/**/*.test.(ts|tsx)'],
+    exclude: ['sledge-test/**/*'],
+    benchmark: {
+      include: ['test/**/*.bench.(ts|tsx)'],
     },
   },
   resolve: {

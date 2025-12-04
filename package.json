@@ -14,6 +14,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest run -c ./vitest.config.ts",
+    "bench": "vitest bench -c ./vitest.config.ts",
     "test:coverage": "vitest --coverage",
     "wasm:build": "wasm-pack build ./src/wasm --target bundler && rm ./src/wasm/pkg/.gitignore && rm ./src/wasm/pkg/package.json",
     "prettier": "prettier --write . --config .prettierrc",

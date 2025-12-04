@@ -1,37 +1,38 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Anvil } from '../src/Anvil';
-import type { RGBA } from '../src/models/RGBA';
-import { TileIndex } from '../src/types/types';
+import { Anvil } from '../../src/Anvil';
+import type { RGBA } from '../../src/models/RGBA';
+import { TileIndex } from '../../src/types/types';
+import { BLACK, BLUE, GREEN, RED, semiTransparent, TRANSPARENT, WHITE, YELLOW } from '../support/colors';
 
 describe('Anvil Facade Integration', () => {
   let anvil: Anvil;
-  const width = 128;
-  const height = 96;
-  const tileSize = 32;
+  const WIDTH = 128;
+  const HEIGHT = 96;
+  const TILE_SIZE = 32;
 
   beforeEach(() => {
-    anvil = new Anvil(width, height, tileSize);
+    anvil = new Anvil(WIDTH, HEIGHT, TILE_SIZE);
   });
 
   describe('Initialization', () => {
     it('should create anvil with correct dimensions', () => {
-      expect(anvil.getWidth()).toBe(width);
-      expect(anvil.getHeight()).toBe(height);
-      expect(anvil.getTileSize()).toBe(tileSize);
+      expect(anvil.getWidth()).toBe(WIDTH);
+      expect(anvil.getHeight()).toBe(HEIGHT);
+      expect(anvil.getTileSize()).toBe(TILE_SIZE);
     });
 
     it('should initialize with transparent pixels', () => {
       const blackPixel = anvil.getPixel(0, 0);
-      expect(blackPixel).toEqual([0, 0, 0, 0]);
+      expect(blackPixel).toEqual(TRANSPARENT);
 
-      const centerPixel = anvil.getPixel(width / 2, height / 2);
-      expect(centerPixel).toEqual([0, 0, 0, 0]);
+      const centerPixel = anvil.getPixel(WIDTH / 2, HEIGHT / 2);
+      expect(centerPixel).toEqual(TRANSPARENT);
     });
 
     it('should have correct tile grid dimensions', () => {
       const tileInfo = anvil.getTileInfo();
-      expect(tileInfo.tilesWide).toBe(Math.ceil(width / tileSize));
-      expect(tileInfo.tilesHigh).toBe(Math.ceil(height / tileSize));
+      expect(tileInfo.tilesWide).toBe(Math.ceil(WIDTH / TILE_SIZE));
+      expect(tileInfo.tilesHigh).toBe(Math.ceil(HEIGHT / TILE_SIZE));
       expect(tileInfo.totalTiles).toBe(tileInfo.tilesWide * tileInfo.tilesHigh);
     });
 
@@ -42,17 +43,14 @@ describe('Anvil Facade Integration', () => {
 
   describe('Pixel Operations', () => {
     it('should set and get individual pixels', () => {
-      const redColor: RGBA = [255, 0, 0, 255];
-      const blueColor: RGBA = [0, 0, 255, 128];
+      anvil.setPixel(10, 15, RED);
+      anvil.setPixel(50, 60, semiTransparent(BLUE));
 
-      anvil.setPixel(10, 15, redColor);
-      anvil.setPixel(50, 60, blueColor);
-
-      expect(anvil.getPixel(10, 15)).toEqual(redColor);
-      expect(anvil.getPixel(50, 60)).toEqual(blueColor);
+      expect(anvil.getPixel(10, 15)).toEqual(RED);
+      expect(anvil.getPixel(50, 60)).toEqual(semiTransparent(BLUE));
 
       // Verify other pixels remain transparent
-      expect(anvil.getPixel(20, 25)).toEqual([0, 0, 0, 0]);
+      expect(anvil.getPixel(20, 25)).toEqual(TRANSPARENT);
     });
 
     it('should handle bounds checking for pixels', () => {
@@ -60,17 +58,17 @@ describe('Anvil Facade Integration', () => {
 
       // Valid coordinates
       expect(() => anvil.setPixel(0, 0, color)).not.toThrow();
-      expect(() => anvil.setPixel(width - 1, height - 1, color)).not.toThrow();
+      expect(() => anvil.setPixel(WIDTH - 1, HEIGHT - 1, color)).not.toThrow();
 
       // Out of bounds coordinates
       expect(() => anvil.setPixel(-1, 0, color)).toThrow();
       expect(() => anvil.setPixel(0, -1, color)).toThrow();
-      expect(() => anvil.setPixel(width, 0, color)).toThrow();
-      expect(() => anvil.setPixel(0, height, color)).toThrow();
+      expect(() => anvil.setPixel(WIDTH, 0, color)).toThrow();
+      expect(() => anvil.setPixel(0, HEIGHT, color)).toThrow();
 
       // Similar for getPixel
       expect(() => anvil.getPixel(-1, 0)).toThrow();
-      expect(() => anvil.getPixel(width, height)).toThrow();
+      expect(() => anvil.getPixel(WIDTH, HEIGHT)).toThrow();
     });
   });
 
@@ -78,18 +76,15 @@ describe('Anvil Facade Integration', () => {
     it('should track individual pixel changes', () => {
       expect(anvil.hasPendingChanges()).toBe(false);
 
-      anvil.setPixel(25, 30, [255, 255, 0, 255]);
+      anvil.setPixel(25, 30, YELLOW);
 
       expect(anvil.hasPendingChanges()).toBe(true);
     });
 
     it('should generate patches for changes', () => {
-      const redColor: RGBA = [255, 0, 0, 255];
-      const blueColor: RGBA = [0, 0, 255, 255];
-
       // Make some pixel changes
-      anvil.setPixel(5, 5, redColor);
-      anvil.setPixel(10, 10, redColor);
+      anvil.setPixel(5, 5, RED);
+      anvil.setPixel(10, 10, RED);
 
       const patch = anvil.previewPatch();
 
@@ -101,7 +96,7 @@ describe('Anvil Facade Integration', () => {
     });
 
     it('should flush changes and clear state', () => {
-      anvil.setPixel(40, 40, [100, 200, 50, 255]);
+      anvil.setPixel(40, 40, semiTransparent(BLACK));
 
       expect(anvil.hasPendingChanges()).toBe(true);
 
@@ -117,19 +112,19 @@ describe('Anvil Facade Integration', () => {
       const bufferData = anvil.getBufferPointer();
 
       expect(bufferData).toBeInstanceOf(Uint8ClampedArray);
-      expect(bufferData.length).toBe(width * height * 4);
+      expect(bufferData.length).toBe(WIDTH * HEIGHT * 4);
 
       // Initially should be all zeros (transparent)
       expect(bufferData.every((value: number) => value === 0)).toBe(true);
     });
 
     it('should update buffer data when pixels change', () => {
-      const color: RGBA = [255, 128, 64, 200];
+      const color: RGBA = semiTransparent(BLACK);
 
       anvil.setPixel(10, 10, color);
 
       const bufferData = anvil.getBufferPointer();
-      const pixelIndex = (10 * width + 10) * 4;
+      const pixelIndex = (10 * WIDTH + 10) * 4;
 
       expect(bufferData[pixelIndex]).toBe(color[0]); // R
       expect(bufferData[pixelIndex + 1]).toBe(color[1]); // G
@@ -142,7 +137,7 @@ describe('Anvil Facade Integration', () => {
       const newHeight = 192;
 
       // Set some initial data
-      anvil.setPixel(50, 50, [255, 0, 0, 255]);
+      anvil.setPixel(50, 50, RED);
 
       anvil.resize(newWidth, newHeight);
 
@@ -150,32 +145,31 @@ describe('Anvil Facade Integration', () => {
       expect(anvil.getHeight()).toBe(newHeight);
 
       // Data within original bounds should be preserved
-      expect(anvil.getPixel(50, 50)).toEqual([255, 0, 0, 255]);
+      expect(anvil.getPixel(50, 50)).toEqual(RED);
 
       // New areas should be transparent
-      expect(anvil.getPixel(200, 150)).toEqual([0, 0, 0, 0]);
+      expect(anvil.getPixel(200, 150)).toEqual(TRANSPARENT);
     });
 
     it('should handle resize with offset preservation', () => {
-      const originalColor: RGBA = [0, 255, 0, 255];
-      anvil.setPixel(10, 10, originalColor);
+      anvil.setPixel(10, 10, GREEN);
 
       // Resize with offset (simulate moving canvas origin)
       anvil.resizeWithOffset(
-        { width: width * 2, height: height * 2 },
+        { width: WIDTH * 2, height: HEIGHT * 2 },
         {
           destOrigin: { x: 50, y: 50 },
         }
       );
 
-      expect(anvil.getWidth()).toBe(width * 2);
-      expect(anvil.getHeight()).toBe(height * 2);
+      expect(anvil.getWidth()).toBe(WIDTH * 2);
+      expect(anvil.getHeight()).toBe(HEIGHT * 2);
 
       // Original pixel should be at new location
-      expect(anvil.getPixel(10 + 50, 10 + 50)).toEqual(originalColor);
+      expect(anvil.getPixel(10 + 50, 10 + 50)).toEqual(GREEN);
 
       // Original location should be transparent
-      expect(anvil.getPixel(10, 10)).toEqual([0, 0, 0, 0]);
+      expect(anvil.getPixel(10, 10)).toEqual(TRANSPARENT);
     });
   });
 
@@ -185,7 +179,7 @@ describe('Anvil Facade Integration', () => {
       expect(anvil.getDirtyTiles()).toHaveLength(0);
 
       // Make a change in first tile
-      anvil.setPixel(15, 15, [255, 255, 255, 255]);
+      anvil.setPixel(15, 15, WHITE);
 
       const dirtyTiles = anvil.getDirtyTiles();
       expect(dirtyTiles).toHaveLength(1);
@@ -194,9 +188,9 @@ describe('Anvil Facade Integration', () => {
 
     it('should track multiple dirty tiles', () => {
       // Make changes in different tiles
-      anvil.setPixel(10, 10, [255, 0, 0, 255]); // Tile (0,0)
-      anvil.setPixel(50, 10, [0, 255, 0, 255]); // Tile (0,1)
-      anvil.setPixel(10, 50, [0, 0, 255, 255]); // Tile (1,0)
+      anvil.setPixel(10, 10, RED); // Tile (0,0)
+      anvil.setPixel(50, 10, GREEN); // Tile (0,1)
+      anvil.setPixel(10, 50, BLUE); // Tile (1,0)
 
       const dirtyTiles = anvil.getDirtyTiles();
       expect(dirtyTiles).toHaveLength(3);
@@ -226,8 +220,8 @@ describe('Anvil Facade Integration', () => {
 
       // Perform many pixel operations
       for (let i = 0; i < 1000; i++) {
-        const x = Math.floor(Math.random() * width);
-        const y = Math.floor(Math.random() * height);
+        const x = Math.floor(Math.random() * WIDTH);
+        const y = Math.floor(Math.random() * HEIGHT);
         const color: RGBA = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), 255];
 
         // Track unique positions
@@ -246,9 +240,9 @@ describe('Anvil Facade Integration', () => {
       const finalColor: RGBA = [200, 100, 50, 255];
 
       // Make multiple changes to the same pixel
-      anvil.setPixel(25, 25, [255, 0, 0, 255]);
-      anvil.setPixel(25, 25, [0, 255, 0, 255]);
-      anvil.setPixel(25, 25, [0, 0, 255, 255]);
+      anvil.setPixel(25, 25, RED);
+      anvil.setPixel(25, 25, GREEN);
+      anvil.setPixel(25, 25, BLUE);
       anvil.setPixel(25, 25, finalColor);
 
       // Final result should be the last color set
@@ -265,13 +259,13 @@ describe('Anvil Facade Integration', () => {
 
       // Test boundary conditions
       expect(() => anvil.setPixel(0, 0, validColor)).not.toThrow();
-      expect(() => anvil.setPixel(width - 1, height - 1, validColor)).not.toThrow();
+      expect(() => anvil.setPixel(WIDTH - 1, HEIGHT - 1, validColor)).not.toThrow();
 
       // Test just outside bounds
       expect(() => anvil.setPixel(-1, 0, validColor)).toThrow();
-      expect(() => anvil.setPixel(width, 0, validColor)).toThrow();
+      expect(() => anvil.setPixel(WIDTH, 0, validColor)).toThrow();
       expect(() => anvil.setPixel(0, -1, validColor)).toThrow();
-      expect(() => anvil.setPixel(0, height, validColor)).toThrow();
+      expect(() => anvil.setPixel(0, HEIGHT, validColor)).toThrow();
     });
 
     it('should handle invalid colors gracefully', () => {
@@ -297,9 +291,9 @@ describe('Anvil Facade Integration', () => {
       expect(anvil.getWidth()).toBe(1);
       expect(anvil.getHeight()).toBe(1);
 
-      expect(() => anvil.setPixel(0, 0, [255, 0, 0, 255])).not.toThrow();
-      expect(() => anvil.setPixel(1, 0, [255, 0, 0, 255])).toThrow();
-      expect(() => anvil.setPixel(0, 1, [255, 0, 0, 255])).toThrow();
+      expect(() => anvil.setPixel(0, 0, RED)).not.toThrow();
+      expect(() => anvil.setPixel(1, 0, RED)).toThrow();
+      expect(() => anvil.setPixel(0, 1, RED)).toThrow();
     });
   });
 });

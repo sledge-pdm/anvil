@@ -1,23 +1,14 @@
 import { describe, expect, test } from 'vitest';
-import { Anvil } from '../../src/Anvil.js';
-import { putShape, type ShapeMask } from '../../src/ops/Shape.js';
-
-function makeSquareMask(size: number): ShapeMask {
-  const half = Math.floor(size / 2);
-  const w = size;
-  const h = size;
-  const mask = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) mask[y * w + x] = 1;
-  }
-  return { mask, width: w, height: h, offsetX: -half, offsetY: -half };
-}
+import { Anvil } from '../../../src/Anvil.js';
+import { putShape } from '../../../src/ops/Shape.js';
+import { RED } from '../../support/colors';
+import { makeSquareMask } from '../../support/shapes.js';
 
 describe('putShape', () => {
   test('applies square mask at center', () => {
     const anvil = new Anvil(32, 32, 8);
     const shape = makeSquareMask(5); // covers 5x5
-    putShape({ anvil, shape, posX: 16, posY: 16, color: [255, 0, 0, 255] });
+    putShape({ anvil, shape, posX: 16, posY: 16, color: RED });
     let colored = 0;
     for (let y = 14; y <= 18; y++) {
       for (let x = 14; x <= 18; x++) {

@@ -1,19 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { TilesController } from '../src/buffer/TilesController';
-import type { RGBA } from '../src/models/RGBA';
-import type { TileIndex } from '../src/types/types';
-import { RgbaBuffer } from '../src/wasm/pkg/anvil_wasm';
+import { TilesController } from '../../../src/buffer/TilesController';
+import type { RGBA } from '../../../src/models/RGBA';
+import type { TileIndex } from '../../../src/types/types';
+import { RgbaBuffer } from '../../../src/wasm/pkg/anvil_wasm';
+import { BLUE, GREEN, RED } from '../../support/colors';
 
 describe('TilesController', () => {
   let buffer: RgbaBuffer;
   let controller: TilesController;
-  const tileSize = 32;
-  const bufferWidth = 128; // 4 tiles wide
-  const bufferHeight = 96; // 3 tiles high
+  const TILE_SIZE = 32;
+  const BUFFER_WIDTH = 128; // 4 tiles wide
+  const BUFFER_HEIGHT = 96; // 3 tiles high
 
   beforeEach(() => {
-    buffer = new RgbaBuffer(bufferWidth, bufferHeight);
-    controller = new TilesController(buffer, bufferWidth, bufferHeight, tileSize);
+    buffer = new RgbaBuffer(BUFFER_WIDTH, BUFFER_HEIGHT);
+    controller = new TilesController(buffer, BUFFER_WIDTH, BUFFER_HEIGHT, TILE_SIZE);
   });
 
   describe('TilesController Model', () => {
@@ -86,7 +87,7 @@ describe('TilesController', () => {
     });
 
     it('should mark tiles dirty when pixels change', () => {
-      const color: RGBA = [255, 0, 0, 255];
+      const color: RGBA = RED;
 
       // Directly set pixel to verify marking works
       buffer.set(50, 50, ...color);
@@ -102,13 +103,13 @@ describe('TilesController', () => {
 
     it('should efficiently track changes across the buffer', () => {
       // Set pixels in different tiles
-      buffer.set(10, 10, ...[255, 0, 0, 255]); // Tile (0,0)
+      buffer.set(10, 10, ...RED); // Tile (0,0)
       controller.markDirtyByPixel(10, 10);
 
-      buffer.set(50, 50, ...[0, 255, 0, 255]); // Tile (1,1)
+      buffer.set(50, 50, ...GREEN); // Tile (1,1)
       controller.markDirtyByPixel(50, 50);
 
-      buffer.set(100, 80, ...[0, 0, 255, 255]); // Tile (2,3)
+      buffer.set(100, 80, ...BLUE); // Tile (2,3)
       controller.markDirtyByPixel(100, 80);
 
       const dirtyTiles = controller.getDirtyTileIndices();
