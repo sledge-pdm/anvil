@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { Anvil } from '../src/Anvil.js';
-import { putShape, type ShapeMask } from '../src/ops/Shape.js';
+import { Anvil } from '../../src/Anvil.js';
+import { putShape, type ShapeMask } from '../../src/ops/Shape.js';
 
 function makeSquareMask(size: number): ShapeMask {
   const half = Math.floor(size / 2);
@@ -11,18 +11,6 @@ function makeSquareMask(size: number): ShapeMask {
     for (let x = 0; x < w; x++) mask[y * w + x] = 1;
   }
   return { mask, width: w, height: h, offsetX: -half, offsetY: -half };
-}
-
-function createBlank(width: number, height: number, color: [number, number, number, number] = [0, 0, 0, 0]) {
-  const arr = new Uint8ClampedArray(width * height * 4);
-  for (let i = 0; i < width * height; i++) {
-    const o = i * 4;
-    arr[o] = color[0];
-    arr[o + 1] = color[1];
-    arr[o + 2] = color[2];
-    arr[o + 3] = color[3];
-  }
-  return arr;
 }
 
 describe('putShape', () => {

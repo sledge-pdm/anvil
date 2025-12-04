@@ -10,15 +10,6 @@
   "exports": {
     ".": "./index.ts"
   },
-  "dependencies": {},
-  "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.9",
-    "vite-plugin-top-level-await": "^1.6.0",
-    "vite-plugin-wasm": "^3.5.0",
-    "prettier": "^3.6.2",
-    "prettier-plugin-organize-imports": "^4.3.0"
-  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -28,5 +19,14 @@
     "prettier": "prettier --write . --config .prettierrc",
     "cargo:format": "cd src/wasm && cargo fmt",
     "format": "pnpm prettier && pnpm cargo:format"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "prettier": "^3.6.2",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "typescript": "^5.9.3",
+    "vite-plugin-top-level-await": "^1.6.0",
+    "vite-plugin-wasm": "^3.5.0",
+    "vitest": "^4.0.9"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "editor.formatOnSave": true,
+  "workbench.tree.indent": 15,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "typescript.suggestionActions.enabled": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "testing.followRunningTest": true,
+
+  "rust-analyzer.linkedProjects": ["./packages/anvil/src/wasm/Cargo.toml", "./packages/wasm/Cargo.toml", "./apps/sledge/src-tauri/Cargo.toml"],
+  "rust-analyzer.check.command": "clippy",
+  "chatgpt.openOnStartup": true
+}
