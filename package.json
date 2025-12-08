@@ -6,7 +6,7 @@
   "license": "MIT",
   "private": false,
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": true,
   "exports": {
     ".": "./index.ts"
   },
