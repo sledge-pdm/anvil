@@ -9,7 +9,7 @@ export default defineConfig({
     globals: true,
     setupFiles: [],
     include: ['test/**/*.test.(ts|tsx)'],
-    exclude: ['sledge-test/**/*'],
+    exclude: [],
     benchmark: {
       include: ['test/**/*.bench.(ts|tsx)'],
     },
