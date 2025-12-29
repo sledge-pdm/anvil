@@ -8,7 +8,7 @@ export type { RawPixelData } from './src/types/rawBuffer.js';
 export type { Point, Size, TileBounds, TileIndex, TileInfo } from './src/types/types.js';
 
 // Core classes
-export { Anvil, type TransferOptions } from './src/Anvil.js';
+export { Anvil, type TransferOptions } from './src/Anvil_Old.js';
 
 // For advanced usage - direct access to components
 export { DiffsController } from './src/buffer/DiffsController.js';

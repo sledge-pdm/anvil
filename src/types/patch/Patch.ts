@@ -2,7 +2,7 @@ import type { PackedPartialPatchData } from './partial.js';
 import type { PackedPixelPatchData, PixelPatchData } from './pixel.js';
 import type { PackedWholePatchData } from './whole.js';
 
-export type PatchType = 'pixel' | 'tile' | 'partial' | 'whole';
+export type PatchType = 'pixel' | 'partial' | 'whole';
 
 export interface PendingDiffs {
   pixels: PixelPatchData[];
