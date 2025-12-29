@@ -1,6 +1,6 @@
 {
   "name": "@sledge-pdm/anvil",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "A buffer operations package for sledge.",
   "author": "innsbluck",
   "license": "MIT",
@@ -22,12 +22,16 @@
     "format": "pnpm prettier && pnpm cargo:format"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^25.0.3",
     "prettier": "^3.6.2",
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^5.9.3",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
     "vitest": "^4.0.15"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com/"
   }
 }
