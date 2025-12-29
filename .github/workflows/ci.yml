@@ -75,6 +75,9 @@ jobs:
           node-version: '22'
           # Note: Removing cache since anvil is a submodule without pnpm-lock.yaml
 
+      - name: Configure pnpm Auth for private registry
+        run: pnpm config set //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+
       - name: Install JS dependencies
         run: pnpm install --no-frozen-lockfile
 
