@@ -1,4 +1,4 @@
-import type { RGBA } from '../models/RGBA';
+import { RGBA } from '@sledge-pdm/core';
 import type { PackedPartialPatchData, PartialPatchData } from '../types/patch/partial';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch';
 import type { PackedPixelPatchData, PixelPatchData } from '../types/patch/pixel';

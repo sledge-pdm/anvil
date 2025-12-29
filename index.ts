@@ -1,5 +1,4 @@
 // Public API exports for @sledge/anvil
-export { RGBAToHex, colorMatch, hexToRGBA, hexWithSharpToRGBA, isTransparent, transparent, type RGBA } from './src/models/RGBA.js';
 export type { PackedPartialPatchData, PartialPatchData } from './src/types/patch/partial.js';
 export type { PackedDiffs, PatchMetadata } from './src/types/patch/Patch.js';
 export type { PackedPixelPatchData, PixelPatchData } from './src/types/patch/pixel.js';

@@ -1,5 +1,5 @@
+import { RGBA } from '@sledge-pdm/core';
 import { Anvil } from '../Anvil.js';
-import type { RGBA } from '../models/RGBA.js';
 import type { PixelPatchData } from '../types/patch/pixel.js';
 /**
  * ShapeMask: 既存のビットマスク表現に加えて、行スパン(run)の高速化キャッシュを追加。

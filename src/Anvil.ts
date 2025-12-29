@@ -1,6 +1,6 @@
+import { RGBA } from '@sledge-pdm/core';
 import { DiffsController } from './buffer/DiffsController';
 import { TilesController } from './buffer/TilesController';
-import type { RGBA } from './models/RGBA';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import type { PackedDiffs } from './types/patch/Patch';
 import type { PixelPatchData } from './types/patch/pixel';

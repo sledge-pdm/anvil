@@ -26,6 +26,9 @@ jobs:
           scope: '@sledge-pdm'
           cache: pnpm
 
+      - name: Configure pnpm Auth for private registry
+        run: pnpm config set //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm publish --no-git-checks

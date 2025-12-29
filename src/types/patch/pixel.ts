@@ -1,4 +1,4 @@
-import { type RGBA } from '../../models/RGBA';
+import { RGBA } from '@sledge-pdm/core';
 
 /**
  * Pixel Diff
