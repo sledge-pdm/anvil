@@ -1,65 +1,9 @@
-import { RGBA } from '@sledge-pdm/core';
+import { rawToWebp, RGBA } from '@sledge-pdm/core';
 import type { PackedPartialPatchData, PartialPatchData } from '../types/patch/partial';
 import type { PackedDiffs, PendingDiffs } from '../types/patch/Patch';
 import type { PackedPixelPatchData, PixelPatchData } from '../types/patch/pixel';
 import type { PackedWholePatchData, WholePatchData } from '../types/patch/whole';
-import type { RawPixelData } from '../types/rawBuffer';
-import { toUint8Array } from '../types/rawBuffer';
 import type { TileIndex } from '../types/types';
-import { png_to_raw, raw_to_png, raw_to_webp, webp_to_raw } from '../wasm/pkg/anvil_wasm';
-
-export function rawToWebp(buffer: RawPixelData, width: number, height: number): Uint8Array {
-  const start = performance.now();
-  const uint8Buffer = toUint8Array(buffer);
-  const webpBuffer = raw_to_webp(uint8Buffer, width, height);
-  const end = performance.now();
-
-  const compressed = (webpBuffer.length / buffer.length) * 100;
-  console.log(
-    `rawToWebp: ${end - start}ms, size: ${buffer.length} > ${webpBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
-  );
-
-  return new Uint8Array(webpBuffer.buffer);
-}
-
-export function webpToRaw(buffer: Uint8Array, width: number, height: number): Uint8Array {
-  const start = performance.now();
-  const rawBuffer = webp_to_raw(buffer, width, height);
-  const end = performance.now();
-
-  const compressed = (buffer.length / rawBuffer.length) * 100;
-  console.log(
-    `webpToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
-  );
-
-  return new Uint8Array(rawBuffer.buffer);
-}
-
-export function rawToPng(buffer: Uint8Array, width: number, height: number): Uint8Array {
-  const start = performance.now();
-  const pngBuffer = raw_to_png(buffer, width, height);
-  const end = performance.now();
-
-  const compressed = (pngBuffer.length / buffer.length) * 100;
-  console.log(
-    `rawToPng: ${end - start}ms, size: ${buffer.length} > ${pngBuffer.length} bytes (compressed 100% > ${Math.round(compressed * 100) / 100}%)`
-  );
-
-  return new Uint8Array(pngBuffer.buffer);
-}
-
-export function pngToRaw(buffer: Uint8Array, width: number, height: number): Uint8Array {
-  const start = performance.now();
-  const rawBuffer = png_to_raw(buffer, width, height);
-  const end = performance.now();
-
-  const compressed = (buffer.length / rawBuffer.length) * 100;
-  console.log(
-    `pngToRaw: ${end - start}ms, size: ${buffer.length} > ${rawBuffer.length} bytes (decompressed ${Math.round(compressed * 100) / 100}% > 100%)`
-  );
-
-  return new Uint8Array(rawBuffer.buffer);
-}
 
 // Utility functions for color conversion
 export function rgbaToPackedU32(rgba: RGBA): number {

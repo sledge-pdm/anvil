@@ -1,12 +1,10 @@
-import { RGBA } from '@sledge-pdm/core';
+import { RawPixelData, RGBA, toUint8Array, toUint8ClampedArray } from '@sledge-pdm/core';
 import { DiffsController } from './buffer/DiffsController';
 import { TilesController } from './buffer/TilesController';
 import { packedU32ToRgba, rgbaToPackedU32 } from './ops/Packing';
 import type { PackedDiffs } from './types/patch/Patch';
 import type { PixelPatchData } from './types/patch/pixel';
 import type { PackedWholePatchData } from './types/patch/whole';
-import type { RawPixelData } from './types/rawBuffer';
-import { toUint8Array, toUint8ClampedArray } from './types/rawBuffer';
 import type { Point, Size, TileIndex } from './types/types';
 import { AntialiasMode, RgbaBuffer } from './wasm/pkg/anvil_wasm';
 

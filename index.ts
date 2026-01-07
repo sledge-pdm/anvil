@@ -3,8 +3,6 @@ export type { PackedPartialPatchData, PartialPatchData } from './src/types/patch
 export type { PackedDiffs, PatchMetadata } from './src/types/patch/Patch.js';
 export type { PackedPixelPatchData, PixelPatchData } from './src/types/patch/pixel.js';
 export type { PackedWholePatchData, WholePatchData } from './src/types/patch/whole.js';
-export { toUint8Array, toUint8ClampedArray } from './src/types/rawBuffer.js';
-export type { RawPixelData } from './src/types/rawBuffer.js';
 export type { Point, Size, TileBounds, TileIndex, TileInfo } from './src/types/types.js';
 
 // Core classes
@@ -19,12 +17,8 @@ export {
   linearToTileIndex,
   packPending,
   packedU32ToRgba,
-  pngToRaw,
-  rawToPng,
-  rawToWebp,
   rgbaToPackedU32,
   tileIndexToLinear,
-  webpToRaw,
 } from './src/ops/Packing.js';
 export { putShape, putShapeLine, type ShapeMask } from './src/ops/Shape.js';
 

@@ -1,7 +1,6 @@
-import { RGBA, Vec2 } from '@sledge-pdm/core';
+import { RGBA, toUint8Array, toUint8ClampedArray, Vec2 } from '@sledge-pdm/core';
 import { packedU32ToRgba, rgbaToPackedU32 } from '../ops/Packing';
 import type { PackedDiffs } from '../types/patch/Patch';
-import { toUint8Array, toUint8ClampedArray } from '../types/rawBuffer';
 import { RgbaBuffer } from '../wasm/pkg/anvil_wasm';
 
 export class Buffer {
