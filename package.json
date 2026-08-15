@@ -19,15 +19,25 @@
     "wasm:build": "wasm-pack build ./src/wasm --target bundler && rm ./src/wasm/pkg/.gitignore && rm ./src/wasm/pkg/package.json",
     "prettier": "prettier --write . --config .prettierrc",
     "cargo:format": "cd src/wasm && cargo fmt",
-    "format": "pnpm prettier && pnpm cargo:format"
+    "format": "pnpm prettier && pnpm cargo:format",
+    "lint-staged": "lint-staged",
+    "prepare": "simple-git-hooks"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,css,scss,html,yml,yaml}": "prettier --write --ignore-unknown"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
   },
   "dependencies": {
     "@sledge-pdm/core": "^1.0.5"
   },
   "devDependencies": {
     "@types/node": "^25.0.3",
+    "lint-staged": "^15.5.0",
     "prettier": "^3.7.4",
     "prettier-plugin-organize-imports": "^4.3.0",
+    "simple-git-hooks": "^2.13.0",
     "typescript": "^5.9.3",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
